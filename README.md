@@ -33,7 +33,7 @@ https://www.arduino.cc/
 6. use ```git commit```to commit the changed files, this will show a text editor where you write a commit message describing what you've done
 7. use ```git push -u origin feature-name``` to push your branch to github
 * **point 5-7 can all be done inside vscode under the version controll tab in the left sidebar**
-8. once you've develepoed your feature go to the github page and open a pull request to merge your code into the ```main``` branch
+8. once you've developed your feature go to the github page and open a pull request to merge your code into the ```main``` branch
 
 #### things too keep in mind
 
