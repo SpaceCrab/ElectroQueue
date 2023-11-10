@@ -22,6 +22,7 @@ this project is using arduino
 https://www.arduino.cc/
 
 ## How to use git 
+
 ### Reference for using git with [VsCode](https://code.visualstudio.com/docs/sourcecontrol/overview)
 
 1. Install git from [here](https://git-scm.com/download)
