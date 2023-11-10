@@ -22,6 +22,8 @@ this project is using arduino
 https://www.arduino.cc/
 
 ## How to use git 
+### Reference for using git with [VsCode](https://code.visualstudio.com/docs/sourcecontrol/overview)
+
 1. Install git from [here](https://git-scm.com/download)
 2. Clone the repository to your machine using ```git clone```  or use the built in git functionality in vs code
 3. make a branch for the feature you're working on using ```git checkout -b feature-name``` or ```git branch feature-name```and then ```git checkout feature-name``` this can also be done using the built in git functionality in VsCode
@@ -34,6 +36,6 @@ https://www.arduino.cc/
 
 #### things too keep in mind
 
-before you start working on a branch or make a new branch, make sure you have the latest code on your machine by using ```git pull``` (not to be confused with a pull request) to update to the latest commits. To do this in VsCode, press the synch button in the version controll tab in the left sidebar or in the bottom left of the screen
+before you start working on a branch or make a new branch, make sure you have the latest code on your machine by using ```git pull``` (not to be confused with a pull request) to update to the latest commits. To do this in VsCode, press the synch button in the version controll tab in the left sidebar or in the bottom left of the screen.
   
-Reference for using git with [VsCode](https://code.visualstudio.com/docs/sourcecontrol/overview)
+
