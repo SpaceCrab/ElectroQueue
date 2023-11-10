@@ -30,5 +30,10 @@ https://www.arduino.cc/
 6. use ```git commit```to commit the changed files, this will show a text editor where you write a commit message describing what you've done
 7. use ```git push -u origin feature-name``` to push your branch to github
 * point 5-7 can all be done inside vscode under the version controll tab in the left sidebar
+8. once you've develepoed your feature go to the github page and open a pull request to merge your code into the ```main``` branch
+
+#### things too keep in mind
+
+before you start working on a branch or make a new branch, make sure you have the latest code on your machine by using ```git pull``` (not to be confused with a pull request) to update to the latest commits. To do this in VsCode, press the synch button in the version controll tab in the left sidebar or in the bottom left of the screen
   
 Reference for using git with [VsCode](https://code.visualstudio.com/docs/sourcecontrol/overview)
