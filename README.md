@@ -15,6 +15,12 @@ The mesh network is made using painless mesh.
 
 https://gitlab.com/painlessMesh/painlessMesh
 
+### arduino 
+
+this project is using arduino 
+
+https://www.arduino.cc/
+
 ## How to use git 
 1. Install git from [here](https://git-scm.com/download)
 2. Clone the repository to your machine using ```git clone```  or use the built in git functionality in vs code
