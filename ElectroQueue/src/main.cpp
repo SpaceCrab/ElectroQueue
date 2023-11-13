@@ -11,20 +11,104 @@
 #define   MESH_PREFIX     "whateverYouLike"
 #define   MESH_PASSWORD   "somethingSneaky"
 #define   MESH_PORT       5555
+#define   ZONE_A_Y        4
+#define   ZONE_A_X        4
+#define   ZONE_B_Y        5
+#define   ZONE_B_x        5
+#define   ZONE_A_ID       "zone A"
+#define   ZONE_B_ID       "zone B"
+
+int posY = 0;
+int posX = 0;
+
+String prevZoneID ;
+
 bool networkstate = false;
+
+uint32_t testMessagesSent = 0;
 
 Scheduler userScheduler; // to control your personal task
 painlessMesh  mesh;
 
+void meshInit(String prefix, String password, int port){
+  if(!networkstate){
+    mesh.init( prefix, password, &userScheduler, port );
+    networkstate = true;
+  } 
+
+}
 // User stub
 void sendMessage() ; // Prototype so PlatformIO doesn't complain
+void updatePosition();
 
 Task taskSendMessage( TASK_SECOND * 1 , TASK_FOREVER, &sendMessage );
+Task taskUpdateposition(TASK_SECOND * 1, TASK_FOREVER, &updatePosition);
+
+void exitZone(){
+  if(networkstate){
+    taskSendMessage.disable();
+    mesh.stop();
+    networkstate = false;
+    Serial.println("left network");
+  }
+}
+
+void enterZone(String zoneID){
+  if(!networkstate)
+  {
+    Serial.println("entered zone ");
+    Serial.println(zoneID);
+    meshInit(zoneID, MESH_PASSWORD, MESH_PORT);
+    taskSendMessage.enableIfNot();
+    networkstate = true;
+  }
+}
+
+// test function to set a random position
+void updatePosition()
+{
+  Serial.println("updated position ");
+  posY = random(4,6);
+  posX = random(4,6);
+  Serial.print(posX);
+  Serial.println(posY);
+
+  if(posY == ZONE_A_Y && posX == ZONE_A_X ) {
+    Serial.println("in zone A");
+    if(prevZoneID != ZONE_A_ID) {
+      exitZone();
+      enterZone(ZONE_A_ID);
+      Serial.println("entered zone A from ");
+      Serial.print(prevZoneID);
+    }
+    prevZoneID = ZONE_A_ID;
+  }
+  else if (posY == ZONE_B_Y && posX == ZONE_B_x ){
+    Serial.println("in zone B");
+    if(prevZoneID != ZONE_B_ID){
+      exitZone();
+      enterZone(ZONE_B_ID);
+      Serial.println("Entered zone B from ");
+      Serial.print(prevZoneID);
+    }
+    prevZoneID = ZONE_B_ID;
+  }
+  else{
+    prevZoneID = "not a zone";
+    Serial.println("leaving zone");
+    exitZone();
+  }
+}
 
 void sendMessage() {
   String msg = "Hello from node ";
   msg += mesh.getNodeId();
   mesh.sendBroadcast( msg );
+  testMessagesSent++;
+  Serial.println("sent message");
+
+  // test code 
+  
   taskSendMessage.setInterval( random( TASK_SECOND * 1, TASK_SECOND * 5 ));
 }
 
@@ -45,32 +129,36 @@ void nodeTimeAdjustedCallback(int32_t offset) {
     Serial.printf("Adjusted time %u. Offset = %d\n", mesh.getNodeTime(),offset);
 }
 
-void meshInit(String prefix, String password, bool networkstate){
-  if(!networkstate){
-    mesh.init( prefix, password, &userScheduler, MESH_PORT );
-    networkstate = true;
-  } 
-
-}
-
-
 void setup() {
   Serial.begin(115200);
 
 //mesh.setDebugMsgTypes( ERROR | MESH_STATUS | CONNECTION | SYNC | COMMUNICATION | GENERAL | MSG_TYPES | REMOTE ); // all types on
   mesh.setDebugMsgTypes( ERROR | STARTUP );  // set before init() so that you can see startup messages
-  meshInit(MESH_PREFIX, MESH_PASSWORD, networkstate);
+  //meshInit(MESH_PREFIX, MESH_PASSWORD, networkstate);
+  enterZone("zone A");
   mesh.onReceive(&receivedCallback);
   mesh.onNewConnection(&newConnectionCallback);
   mesh.onChangedConnections(&changedConnectionCallback);
   mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
 
+  Serial.println("creating scheduler tasks ");
+  Serial.println("taskSendmessage");
   userScheduler.addTask( taskSendMessage );
+
+  Serial.println("taskUpdatePosition");
+  userScheduler.addTask(taskUpdateposition);
+  taskUpdateposition.setInterval(30000);
+
+  Serial.println("taskUpdatePosition enable");
+  taskUpdateposition.enable();
+
+  Serial.println("taskSendMessage enable");
   taskSendMessage.enable();
+
+  Serial.println("init complete");
 }
 
 void loop() {
-  // it will run the user scheduler as well
   mesh.update();
 }
 
