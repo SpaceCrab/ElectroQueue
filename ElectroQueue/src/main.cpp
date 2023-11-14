@@ -68,10 +68,19 @@ void enterZone(String zoneID){
 void updatePosition()
 {
   Serial.println("updated position ");
-  posY = random(4,6);
-  posX = random(4,6);
+  posY = 4;
+  posX = 4; 
+
+  //chooses a random position 
+  //posY = random(4,6);
+  //posX = random(4,6);
+
   Serial.print(posX);
   Serial.println(posY);
+
+  String str = "free memory: ";
+  str += ESP.getFreeHeap();
+  Serial.println(str);
 
   if(posY == ZONE_A_Y && posX == ZONE_A_X ) {
     Serial.println("in zone A");
@@ -80,6 +89,9 @@ void updatePosition()
       enterZone(ZONE_A_ID);
       Serial.println("entered zone A from ");
       Serial.print(prevZoneID);
+    }
+    else{
+      Serial.println("same zone, nothing changed ");
     }
     prevZoneID = ZONE_A_ID;
   }
@@ -90,6 +102,9 @@ void updatePosition()
       enterZone(ZONE_B_ID);
       Serial.println("Entered zone B from ");
       Serial.print(prevZoneID);
+    }
+    else{
+      Serial.println("same zone, nothing changed ");
     }
     prevZoneID = ZONE_B_ID;
   }
