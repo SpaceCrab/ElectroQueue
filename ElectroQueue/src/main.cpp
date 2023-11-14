@@ -30,16 +30,37 @@ uint32_t testMessagesSent = 0;
 Scheduler userScheduler; // to control your personal task
 painlessMesh  mesh;
 
+void sendMessage() ; // Prototype so PlatformIO doesn't complain
+void updatePosition();
+
+void receivedCallback( uint32_t from, String &msg ) {
+  Serial.printf("startHere: Received from %u msg=%s\n", from, msg.c_str());
+}
+
+void newConnectionCallback(uint32_t nodeId) {
+    Serial.printf("--> startHere: New Connection, nodeId = %u\n", nodeId);
+}
+
+void changedConnectionCallback() {
+  Serial.printf("Changed connections\n");
+}
+
+void nodeTimeAdjustedCallback(int32_t offset) {
+    Serial.printf("Adjusted time %u. Offset = %d\n", mesh.getNodeTime(),offset);
+}
+
 void meshInit(String prefix, String password, int port){
   if(!networkstate){
     mesh.init( prefix, password, &userScheduler, port );
     networkstate = true;
+    mesh.onReceive(&receivedCallback);
+    mesh.onNewConnection(&newConnectionCallback);
+    mesh.onChangedConnections(&changedConnectionCallback);
+    mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
   } 
 
 }
 // User stub
-void sendMessage() ; // Prototype so PlatformIO doesn't complain
-void updatePosition();
 
 Task taskSendMessage( TASK_SECOND * 1 , TASK_FOREVER, &sendMessage );
 Task taskUpdateposition(TASK_SECOND * 1, TASK_FOREVER, &updatePosition);
@@ -58,6 +79,7 @@ void enterZone(String zoneID){
   {
     Serial.println("entered zone ");
     Serial.println(zoneID);
+
     meshInit(zoneID, MESH_PASSWORD, MESH_PORT);
     taskSendMessage.enableIfNot();
     networkstate = true;
@@ -82,11 +104,13 @@ void updatePosition()
   str += ESP.getFreeHeap();
   Serial.println(str);
 
+  //check which zone the nodes is in
+  //TODO: make this into a switch or some type of handler for multiple zones
   if(posY == ZONE_A_Y && posX == ZONE_A_X ) {
     Serial.println("in zone A");
-    if(prevZoneID != ZONE_A_ID) {
-      exitZone();
-      enterZone(ZONE_A_ID);
+    if(prevZoneID != ZONE_A_ID) { //check for zone change 
+      exitZone();                 //leave the old network
+      enterZone(ZONE_A_ID);       // create or enter the new network
       Serial.println("entered zone A from ");
       Serial.print(prevZoneID);
     }
@@ -128,33 +152,17 @@ void sendMessage() {
 }
 
 // Needed for painless library
-void receivedCallback( uint32_t from, String &msg ) {
-  Serial.printf("startHere: Received from %u msg=%s\n", from, msg.c_str());
-}
-
-void newConnectionCallback(uint32_t nodeId) {
-    Serial.printf("--> startHere: New Connection, nodeId = %u\n", nodeId);
-}
-
-void changedConnectionCallback() {
-  Serial.printf("Changed connections\n");
-}
-
-void nodeTimeAdjustedCallback(int32_t offset) {
-    Serial.printf("Adjusted time %u. Offset = %d\n", mesh.getNodeTime(),offset);
-}
 
 void setup() {
   Serial.begin(115200);
 
 //mesh.setDebugMsgTypes( ERROR | MESH_STATUS | CONNECTION | SYNC | COMMUNICATION | GENERAL | MSG_TYPES | REMOTE ); // all types on
   mesh.setDebugMsgTypes( ERROR | STARTUP );  // set before init() so that you can see startup messages
-  //meshInit(MESH_PREFIX, MESH_PASSWORD, networkstate);
-  enterZone("zone A");
-  mesh.onReceive(&receivedCallback);
-  mesh.onNewConnection(&newConnectionCallback);
-  mesh.onChangedConnections(&changedConnectionCallback);
-  mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
+  meshInit(ZONE_A_ID, MESH_PASSWORD, MESH_PORT);
+//  mesh.onReceive(&receivedCallback);
+//  mesh.onNewConnection(&newConnectionCallback);
+//  mesh.onChangedConnections(&changedConnectionCallback);
+//  mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
 
   Serial.println("creating scheduler tasks ");
   Serial.println("taskSendmessage");
@@ -167,8 +175,8 @@ void setup() {
   Serial.println("taskUpdatePosition enable");
   taskUpdateposition.enable();
 
-  Serial.println("taskSendMessage enable");
-  taskSendMessage.enable();
+  //Serial.println("taskSendMessage enable");
+  //taskSendMessage.enable();
 
   Serial.println("init complete");
 }
