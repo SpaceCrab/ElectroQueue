@@ -38,5 +38,6 @@ https://www.arduino.cc/
 #### things too keep in mind
 
 before you start working on a branch or make a new branch, make sure you have the latest code on your machine by using ```git pull``` (not to be confused with a pull request) to update to the latest commits. To do this in VsCode, press the synch button in the version controll tab in the left sidebar or in the bottom left of the screen.
-  
+
+To open a diffrent branch in the repository use ```git checkout <branchname> ```once you've done your changes just commit and push as normal.
 
