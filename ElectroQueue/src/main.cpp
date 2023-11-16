@@ -20,6 +20,17 @@
 
 int posY = 0;
 int posX = 0;
+int queuePos = 0;
+
+struct response
+{
+  u_int32_t nodeID;
+  bool higher;
+};
+
+std::list<response> responseList;
+std::list<u_int32_t> nodeList;
+std::list<u_int32_t>::iterator nodeListIt;
 
 String prevZoneID ;
 
@@ -38,15 +49,16 @@ void receivedCallback( uint32_t from, String &msg ) {
 }
 
 void newConnectionCallback(uint32_t nodeId) {
-    Serial.printf("--> startHere: New Connection, nodeId = %u\n", nodeId);
+  Serial.printf("--> startHere: New Connection, nodeId = %u\n", nodeId);
 }
 
 void changedConnectionCallback() {
   Serial.printf("Changed connections\n");
+  nodeList = mesh.getNodeList();
 }
 
 void nodeTimeAdjustedCallback(int32_t offset) {
-    Serial.printf("Adjusted time %u. Offset = %d\n", mesh.getNodeTime(),offset);
+  Serial.printf("Adjusted time %u. Offset = %d\n", mesh.getNodeTime(),offset);
 }
 
 void meshInit(String prefix, String password, int port){
@@ -65,6 +77,33 @@ void meshInit(String prefix, String password, int port){
 Task taskSendMessage( TASK_SECOND * 1 , TASK_FOREVER, &sendMessage );
 Task taskUpdateposition(TASK_SECOND * 1, TASK_FOREVER, &updatePosition);
 
+void addToList(u_int32_t nodeID, bool higherScore){
+  // add a node and its response to the responseList
+  struct response newResponse;
+
+  newResponse.higher = higherScore;
+  newResponse.nodeID = nodeID;
+
+  std::list<response>::iterator responseListIt = responseList.begin();
+  responseList.insert(responseListIt, newResponse);
+}
+
+void removeFromList(u_int32_t id){
+  //remove a node and its response from the response list  
+  std::list<response>::iterator responseListIt;
+  for (responseListIt = responseList.begin(); responseListIt != responseList.end(); ++responseListIt){
+    if(responseListIt->nodeID == id)responseList.erase(responseListIt) ;
+  }
+}
+
+
+
+bool nodesInNetwork(){
+  nodeList = mesh.getNodeList();
+  if(nodeList.empty()) return true;
+  else return false;
+}
+
 void exitZone(){
   if(networkstate){
     taskSendMessage.disable();
@@ -80,9 +119,19 @@ void enterZone(String zoneID){
     Serial.println("entered zone ");
     Serial.println(zoneID);
 
+    Serial.println("starting network.....");
     meshInit(zoneID, MESH_PASSWORD, MESH_PORT);
-    taskSendMessage.enableIfNot();
     networkstate = true;
+
+    nodeList = mesh.getNodeList();
+
+    Serial.println("broadcasting request to charge");
+    taskSendMessage.enable();
+    
+    /*if(nodeList.empty()){ //checks if the network has any other nodes in it 
+      Serial.println("broadcasting request to charge");
+      taskSendMessage.enable();
+    }*/
   }
 }
 
