@@ -96,8 +96,6 @@ void removeFromList(u_int32_t id){
   }
 }
 
-
-
 bool nodesInNetwork(){
   nodeList = mesh.getNodeList();
   if(nodeList.empty()) return true;
