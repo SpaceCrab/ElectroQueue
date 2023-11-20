@@ -8,6 +8,11 @@
 
 #include "painlessMesh.h"
 //#include "common.h"
+#include <state.h>
+
+/* SET THE INITIAL STATE */
+State current_state = move_to_destination;
+State next_state = move_to_destination;
 
 bool move(Position dest, int cs)
 {

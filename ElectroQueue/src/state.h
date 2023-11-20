@@ -1,3 +1,14 @@
+#ifndef STATE_H
+#define STATE_H
+
+/* GLOBAL VARIABLES */
+#define NR_OF_CS 2
+#define DIMENSION_LIMIT 10
+#define MAX_DISTANCE 19
+#define MAX_LOAD 20000
+#define MIN_BATTERY_CONSUMPTION 0.3
+#define MAX_BATTERY_LEVEL 100
+
 /* STRUCT TO REPRESENT A POSITION IN THE SYSTEM */
 struct Position
 {
@@ -5,6 +16,7 @@ struct Position
     int y;
 };
 
+//statemachine functions
 Position random_position();
 Position nearest_charging_station();
 void initialize_charging_stations();
@@ -42,6 +54,7 @@ const float max_battery_consumption = MAX_BATTERY_LEVEL / MAX_DISTANCE;
 /* A LIST OF ALL CHARGING STATIONS "CS" IN THE SYSTEM */
 Position charging_stations[NR_OF_CS];
 
+/* NODE ATTRIBUTES */
 int distance;
 int range;
 int load;
@@ -52,3 +65,5 @@ int broadcast_request;
 float priority;
 Position current_position;
 Position destination;
+
+#endif
