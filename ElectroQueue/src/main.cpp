@@ -7,6 +7,8 @@
 //
 //************************************************************
 #include "painlessMesh.h"
+//#include <scenario-simulation.cpp>
+
 
 #define   MESH_PREFIX     "whateverYouLike"
 #define   MESH_PASSWORD   "somethingSneaky"
@@ -64,6 +66,7 @@ void meshInit(String prefix, String password, int port){
 
 Task taskSendMessage( TASK_SECOND * 1 , TASK_FOREVER, &sendMessage );
 Task taskUpdateposition(TASK_SECOND * 1, TASK_FOREVER, &updatePosition);
+Task taskStateMachine(TASK_SECOND * 1, TASK_FOREVER, &stateMachine);
 
 void exitZone(){
   if(networkstate){
@@ -90,12 +93,12 @@ void enterZone(String zoneID){
 void updatePosition()
 {
   Serial.println("updated position ");
-  posY = 4;
-  posX = 4; 
+ // posY = 4;
+  //posX = 4; 
 
   //chooses a random position 
-  //posY = random(4,6);
-  //posX = random(4,6);
+  posY = random(4,6);
+  posX = random(4,6);
 
   Serial.print(posX);
   Serial.println(posY);
@@ -163,6 +166,10 @@ void setup() {
 //  mesh.onNewConnection(&newConnectionCallback);
 //  mesh.onChangedConnections(&changedConnectionCallback);
 //  mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
+
+  /*userScheduler.addTask(taskStateMachine);
+  taskStateMachine.enable();
+  taskStateMachine.setInterval(10000);*/
 
   Serial.println("creating scheduler tasks ");
   Serial.println("taskSendmessage");
