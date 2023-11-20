@@ -3,6 +3,8 @@
 #include <painlessMesh.h>
 #include <state.h>
 
+bool networkstate = false;
+
 void sendMessage() ; // Prototype so PlatformIO doesn't complain
 void updatePosition();
 
@@ -34,10 +36,6 @@ void meshInit(String prefix, String password, int port){
 
 }
 // User stub
-
-Task taskSendMessage( TASK_SECOND * 1 , TASK_FOREVER, &sendMessage );
-Task taskUpdateposition(TASK_SECOND * 1, TASK_FOREVER, &updatePosition);
-Task taskStateMachine(TASK_SECOND * 1, TASK_FOREVER, &stateMachine);
 
 void exitZone(){
   if(networkstate){

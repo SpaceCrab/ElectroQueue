@@ -3,6 +3,7 @@
 #define COM_H
 
 #include <painlessMesh.h>
+#include <state.h>
 
 #define   MESH_PREFIX     "whateverYouLike"
 #define   MESH_PASSWORD   "somethingSneaky"
@@ -23,6 +24,9 @@ uint32_t testMessagesSent = 0;
 Scheduler userScheduler; // to control your personal task
 
 painlessMesh  mesh;
+
+Task taskSendMessage( TASK_SECOND * 1 , TASK_FOREVER, &sendMessage );
+Task taskStateMachine(TASK_SECOND * 1, TASK_FOREVER, &stateMachine);
 
 void sendMessage() ; // Prototype so PlatformIO doesn't complain
 
