@@ -23,7 +23,15 @@ uint32_t testMessagesSent = 0;
 
 Scheduler userScheduler; // to control your personal task
 
+struct response{
+    u_int32_t nodeId;
+    bool higher;
+};
+
 painlessMesh  mesh;
+
+std::list<u_int32_t> nodeList;
+std::list<response> responseList;
 
 Task taskSendMessage( TASK_SECOND * 1 , TASK_FOREVER, &sendMessage );
 Task taskStateMachine(TASK_SECOND * 1, TASK_FOREVER, &stateMachine);

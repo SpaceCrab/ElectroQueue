@@ -30,7 +30,7 @@ float calc_priority();
 void print_info();
 void handle_move_destination();
 void handle_move_charging_station();
-void handle_connect_and_broadcast();
+void handle_connect_and_broadcast(String zoneId);
 void handle_queuing();
 void handle_charging();
 void update_values();

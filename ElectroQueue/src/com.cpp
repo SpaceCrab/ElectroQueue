@@ -4,6 +4,7 @@
 #include <state.h>
 
 bool networkstate = false;
+std::list<u_int32_t> nodeList;
 
 void sendMessage() ; // Prototype so PlatformIO doesn't complain
 void updatePosition();
@@ -14,10 +15,12 @@ void receivedCallback( uint32_t from, String &msg ) {
 
 void newConnectionCallback(uint32_t nodeId) {
     Serial.printf("--> startHere: New Connection, nodeId = %u\n", nodeId);
+    nodeList = mesh.getNodeList();
 }
 
 void changedConnectionCallback() {
   Serial.printf("Changed connections\n");
+  nodeList = mesh.getNodeList();
 }
 
 void nodeTimeAdjustedCallback(int32_t offset) {
