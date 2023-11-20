@@ -1,10 +1,9 @@
-#include <common.h>
 #include <com.h>
 #include <painlessMesh.h>
 #include <state.h>
 
 bool networkstate = false;
-std::list<u_int32_t> nodeList;
+
 
 void sendMessage() ; // Prototype so PlatformIO doesn't complain
 void updatePosition();
@@ -65,7 +64,6 @@ void sendMessage() {
   String msg = "Hello from node ";
   msg += mesh.getNodeId();
   mesh.sendBroadcast( msg );
-  testMessagesSent++;
   Serial.println("sent message");
 
   // test code 

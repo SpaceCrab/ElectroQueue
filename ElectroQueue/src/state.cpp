@@ -7,7 +7,6 @@
 
 
 #include "painlessMesh.h"
-//#include "common.h"
 #include <state.h>
 #include <com.h>
 
@@ -90,7 +89,6 @@ void initialize_charging_stations() {
 
     charging_stations[0] = zone_A;
     charging_stations[1] = zone_B;
-    // Add more charging stations if needed
 }
 
 int calc_range()
@@ -118,6 +116,7 @@ float calc_battery_consumption()
 
 void initialize_node()
 {
+    std::srand(std::time(nullptr));
     load = std::rand() % MAX_LOAD + 1;
     battery_level = std::rand() % (MAX_BATTERY_LEVEL + 1);
     battery_consumption = calc_battery_consumption();
@@ -139,7 +138,7 @@ void handle_queuing() {
 void handle_connect_and_broadcast(String zoneId) 
 {
     // 1. Connect to the mesh network
-    meshInit(zoneId, MESH_PASSWORD, MESH_PORT);
+    enterZone(currentZone);
     Serial.println("Connected to the mesh network");
 
     nodeList = mesh.getNodeList();
@@ -157,9 +156,6 @@ void handle_connect_and_broadcast(String zoneId)
 }
 
 void stateMachine(){
-    // Seed the random number generator with the current time
-    std::srand(std::time(nullptr));
-
 
     switch (current_state)
     {
@@ -205,7 +201,4 @@ void stateMachine(){
     }
     current_state = next_state;
     update_values();
-    // Introduce a delay of 1 second
-    usleep(2000000); // 1 second = 1,000,000 microseconds
-
 }

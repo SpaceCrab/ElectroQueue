@@ -17,45 +17,21 @@
 
 String prevZoneID ;
 
-bool networkstate = false;
-
-uint32_t testMessagesSent = 0;
-
 Scheduler userScheduler; // to control your personal task
 
 struct response{
     u_int32_t nodeId;
     bool higher;
 };
+std::list<response> responseList;
+std::list<u_int32_t> nodeList;
 
 painlessMesh  mesh;
 
-std::list<u_int32_t> nodeList;
-std::list<response> responseList;
 
-Task taskSendMessage( TASK_SECOND * 1 , TASK_FOREVER, &sendMessage );
-Task taskStateMachine(TASK_SECOND * 1, TASK_FOREVER, &stateMachine);
+void sendMessage(); // Prototype so PlatformIO doesn't complain
 
-void sendMessage() ; // Prototype so PlatformIO doesn't complain
-
-void receivedCallback( uint32_t from, String &msg ) {
-  Serial.printf("startHere: Received from %u msg=%s\n", from, msg.c_str());
-}
-
-void newConnectionCallback(uint32_t nodeId) {
-    Serial.printf("--> startHere: New Connection, nodeId = %u\n", nodeId);
-}
-
-void changedConnectionCallback() {
-  Serial.printf("Changed connections\n");
-}
-
-void nodeTimeAdjustedCallback(int32_t offset) {
-    Serial.printf("Adjusted time %u. Offset = %d\n", mesh.getNodeTime(),offset);
-}
-
-void meshInit(String prefix, String password, int port){
-}
+void meshInit(String prefix, String password, int port);
 // User stub
 
 // Function declarations from code2.cpp
@@ -68,5 +44,8 @@ void changedConnectionCallback();
 void nodeTimeAdjustedCallback(int32_t offset);
 void exitZone();
 void enterZone(String zoneID);
+
+Task taskSendMessage( TASK_SECOND * 1 , TASK_FOREVER, &sendMessage );
+Task taskStateMachine(TASK_SECOND * 1, TASK_FOREVER, &stateMachine);
 
 #endif 
