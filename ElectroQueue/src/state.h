@@ -15,6 +15,7 @@ String getPos();
 
 /*getter & setters*/
 void setNodeList(std::list<u_int32_t> nodeList);
+int getPrio();
 
 
 #endif 

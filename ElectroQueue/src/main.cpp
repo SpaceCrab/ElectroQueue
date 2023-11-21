@@ -7,7 +7,11 @@
 //
 //************************************************************
 #include "painlessMesh.h"
+#include <string>
+#include <iostream>
+
 #include "state.h"
+
 
 #define   MESH_PREFIX     "whateverYouLike"
 #define   MESH_PASSWORD   "somethingSneaky"
@@ -18,10 +22,15 @@
 #define   ZONE_B_x        5
 #define   ZONE_A_ID       "zone A"
 #define   ZONE_B_ID       "zone B"
+#define   BROADCAST_PREFIX "BROADCAST"
+#define   SINGLE_PREFIX   "SINGLE"
 
 int posY = 0;
 int posX = 0;
 int queuePos = 0;
+
+String currentMsg;
+u_int32_t currentTarget;
 
 state currentState = connect_broadcast;
 
@@ -47,10 +56,82 @@ Scheduler userScheduler; // to control your personal task
 painlessMesh  mesh;
 
 void sendMessage() ; // Prototype so PlatformIO doesn't complain
+void sendBroadcast();
+void sendSingleMsg();
+void stateCheck();
+
+Task taskSendMessage( TASK_SECOND * 1 , TASK_FOREVER, &sendMessage );
+Task taskStateCheck(TASK_SECOND * 1, TASK_FOREVER, &stateCheck);
+Task taskSendBroadcast(TASK_SECOND * 1, TASK_FOREVER, &sendBroadcast);
+Task taskSendSingle(TASK_SECOND * 1 , TASK_FOREVER, &sendSingleMsg );
+
+void addToList(u_int32_t nodeID, bool higherScore){
+  // add a node and its response to the responseList
+  struct response newResponse;
+
+  newResponse.higher = higherScore;
+  newResponse.nodeID = nodeID;
+
+  std::list<response>::iterator responseListIt = responseList.begin();
+  responseList.insert(responseListIt, newResponse);
+}
+
+void removeFromList(u_int32_t id){
+  //remove a node and its response from the response list  
+  std::list<response>::iterator responseListIt;
+  for (responseListIt = responseList.begin(); responseListIt != responseList.end(); ++responseListIt){
+    if(responseListIt->nodeID == id)responseList.erase(responseListIt) ;
+  }
+}
+
+void compareList(){
+  for(auto it = responseList.begin();it != responseList.end();){
+    if(!std::count(nodeList.begin(), nodeList.end(), it ->nodeID)){
+      it = responseList.erase(it); //removes nodes not connected to the network
+    } else {
+      it++;
+    }
+  }
+}
 
 void receivedCallback( uint32_t from, String &msg ) {
   Serial.printf("startHere: Received from %u msg=%s\n", from, msg.c_str());
+  /*when the recieved msg is a broadcast with prio score, compare the score.
+      if the score is lower than the own score: respond with false
+      if the score is higher than the own score: respond with true 
+  */
+  if(currentState != queueing) return;
+  if(msg.startsWith(BROADCAST_PREFIX)){
+      int ownScore = getPrio();
+      char delimiter = ',';
 
+      int pos = msg.indexOf(delimiter);
+      if(pos != -1){
+        String scoreStr = msg.substring(pos + 1);
+        int otherScore = scoreStr.toInt();
+
+        if(ownScore > otherScore){
+          currentMsg = "SINGLE,FALSE";
+          currentTarget = from;
+          taskSendSingle.setIterations(3);
+          taskSendSingle.enable();
+        }//send response with false;
+
+        if(ownScore < otherScore){
+          currentMsg = "SINGLE,TRUE";
+          currentTarget = from;
+          taskSendSingle.setIterations(3);
+          taskSendSingle.enable();
+        }//send response with true;
+      }
+  }
+  /*when the recieved msg is a response: store the response in the responselist
+  */
+  else if(msg.startsWith(SINGLE_PREFIX));{
+      bool response = false;
+      if(msg.endsWith("TRUE")) response = true;
+      addToList(from,response);
+  }
 
 }
 
@@ -81,59 +162,16 @@ void meshInit(String prefix, String password, int port){
 }
 // User stub
 
-Task taskSendMessage( TASK_SECOND * 1 , TASK_FOREVER, &sendMessage );
-Task taskStateCheck(TASK_SECOND * 1, TASK_FOREVER, &stateCheck);
-Task taskSendBroadcast(TASK_SECOND * 1, TASK_FOREVER, &sendBroadcast);
-
-void stateCheck(){
-
-  String zoneId; 
-  currentState = updateState();
-
-  switch (currentState)
-  {
-  case connect_broadcast:
-    zoneId = getPos();
-    enterZone(zoneId);
-
-    taskSendBroadcast.setIterations(4);
-    taskSendBroadcast.enable();
-    break;
-  case charging:
-    break;
-  case queueing:
-    break;
-  default:
-    break;
-  }
-}
 
 void sendBroadcast(){
-  String msg = "Hello from node ";
-  msg += mesh.getNodeId();
-  mesh.sendBroadcast( msg );
-  testMessagesSent++;
-  Serial.println("sent message");
+  mesh.sendBroadcast( currentMsg );
+  Serial.println("sent broadcast message");
 }
 
-void addToList(u_int32_t nodeID, bool higherScore){
-  // add a node and its response to the responseList
-  struct response newResponse;
-
-  newResponse.higher = higherScore;
-  newResponse.nodeID = nodeID;
-
-  std::list<response>::iterator responseListIt = responseList.begin();
-  responseList.insert(responseListIt, newResponse);
+void sendSingleMsg(){
+  mesh.sendSingle(currentTarget, currentMsg);
 }
 
-void removeFromList(u_int32_t id){
-  //remove a node and its response from the response list  
-  std::list<response>::iterator responseListIt;
-  for (responseListIt = responseList.begin(); responseListIt != responseList.end(); ++responseListIt){
-    if(responseListIt->nodeID == id)responseList.erase(responseListIt) ;
-  }
-}
 
 bool nodesInNetwork(){
   nodeList = mesh.getNodeList();
@@ -183,6 +221,28 @@ void sendMessage() {
   taskSendMessage.setInterval( random( TASK_SECOND * 1, TASK_SECOND * 5 ));
 }
 
+void stateCheck(){
+
+  String zoneId; 
+  currentState = updateState();
+
+  switch (currentState)
+  {
+  case connect_broadcast:
+    zoneId = getPos();
+    enterZone(zoneId);
+
+    taskSendBroadcast.setIterations(4);
+    taskSendBroadcast.enable();
+    break;
+  case charging:
+    break;
+  case queueing:
+    break;
+  default:
+    break;
+  }
+}
 // Needed for painless library
 
 void setup() {
@@ -198,6 +258,8 @@ void setup() {
   userScheduler.addTask(taskStateCheck);
   taskStateCheck.setInterval(100);
   taskStateCheck.enable();
+
+  userScheduler.addTask(taskSendSingle);
 
   userScheduler.addTask(taskSendBroadcast);
 
