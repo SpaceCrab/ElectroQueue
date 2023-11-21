@@ -6,9 +6,10 @@
 //
 //
 //************************************************************
-#include <painlessMesh.h>
-#include <com.h>
-#include <state.h>
+
+//#include <com.h>
+//#include <state.h>
+#include <common.h>
 
 
 

@@ -1,6 +1,7 @@
-#include <painlessMesh.h>
-#include <com.h>
-#include <state.h>
+//#include <painlessMesh.h>
+//#include <com.h>
+//#include <state.h>
+#include <common.h>
 
 
 bool networkstate = false;

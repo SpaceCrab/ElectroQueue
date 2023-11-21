@@ -5,10 +5,11 @@
 #include <cmath>
 #include <vector>
 
-#include <painlessMesh.h>
+//#include <painlessMesh.h>
 
-#include <state.h>
-#include <com.h>
+//#include <state.h>
+//#include <com.h>
+#include <common.h>
 
 
 /* SET THE INITIAL STATE */
