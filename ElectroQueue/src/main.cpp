@@ -7,6 +7,7 @@
 //
 //************************************************************
 #include "painlessMesh.h"
+#include "state.h"
 
 #define   MESH_PREFIX     "whateverYouLike"
 #define   MESH_PASSWORD   "somethingSneaky"
@@ -22,11 +23,15 @@ int posY = 0;
 int posX = 0;
 int queuePos = 0;
 
+state currentState = connect_broadcast;
+
 struct response
 {
   u_int32_t nodeID;
   bool higher;
 };
+
+
 
 std::list<response> responseList;
 std::list<u_int32_t> nodeList;
@@ -42,10 +47,11 @@ Scheduler userScheduler; // to control your personal task
 painlessMesh  mesh;
 
 void sendMessage() ; // Prototype so PlatformIO doesn't complain
-void updatePosition();
 
 void receivedCallback( uint32_t from, String &msg ) {
   Serial.printf("startHere: Received from %u msg=%s\n", from, msg.c_str());
+
+
 }
 
 void newConnectionCallback(uint32_t nodeId) {
@@ -55,6 +61,7 @@ void newConnectionCallback(uint32_t nodeId) {
 void changedConnectionCallback() {
   Serial.printf("Changed connections\n");
   nodeList = mesh.getNodeList();
+  setNodeList(nodeList);
 }
 
 void nodeTimeAdjustedCallback(int32_t offset) {
@@ -75,7 +82,39 @@ void meshInit(String prefix, String password, int port){
 // User stub
 
 Task taskSendMessage( TASK_SECOND * 1 , TASK_FOREVER, &sendMessage );
-Task taskUpdateposition(TASK_SECOND * 1, TASK_FOREVER, &updatePosition);
+Task taskStateCheck(TASK_SECOND * 1, TASK_FOREVER, &stateCheck);
+Task taskSendBroadcast(TASK_SECOND * 1, TASK_FOREVER, &sendBroadcast);
+
+void stateCheck(){
+
+  String zoneId; 
+  currentState = updateState();
+
+  switch (currentState)
+  {
+  case connect_broadcast:
+    zoneId = getPos();
+    enterZone(zoneId);
+
+    taskSendBroadcast.setIterations(4);
+    taskSendBroadcast.enable();
+    break;
+  case charging:
+    break;
+  case queueing:
+    break;
+  default:
+    break;
+  }
+}
+
+void sendBroadcast(){
+  String msg = "Hello from node ";
+  msg += mesh.getNodeId();
+  mesh.sendBroadcast( msg );
+  testMessagesSent++;
+  Serial.println("sent message");
+}
 
 void addToList(u_int32_t nodeID, bool higherScore){
   // add a node and its response to the responseList
@@ -124,8 +163,6 @@ void enterZone(String zoneID){
     nodeList = mesh.getNodeList();
 
     Serial.println("broadcasting request to charge");
-    taskSendMessage.enable();
-    
     /*if(nodeList.empty()){ //checks if the network has any other nodes in it 
       Serial.println("broadcasting request to charge");
       taskSendMessage.enable();
@@ -134,58 +171,6 @@ void enterZone(String zoneID){
 }
 
 // test function to set a random position
-void updatePosition()
-{
-  Serial.println("updated position ");
-  posY = 4;
-  posX = 4; 
-
-  //chooses a random position 
-  //posY = random(4,6);
-  //posX = random(4,6);
-
-  Serial.print(posX);
-  Serial.println(posY);
-
-  String str = "free memory: ";
-  str += ESP.getFreeHeap();
-  Serial.println(str);
-
-  //check which zone the nodes is in
-  //TODO: make this into a switch or some type of handler for multiple zones
-  if(posY == ZONE_A_Y && posX == ZONE_A_X ) {
-    Serial.println("in zone A");
-    if(prevZoneID != ZONE_A_ID) { //check for zone change 
-      exitZone();                 //leave the old network
-      enterZone(ZONE_A_ID);       // create or enter the new network
-      Serial.println("entered zone A from ");
-      Serial.print(prevZoneID);
-    }
-    else{
-      Serial.println("same zone, nothing changed ");
-    }
-    prevZoneID = ZONE_A_ID;
-  }
-  else if (posY == ZONE_B_Y && posX == ZONE_B_x ){
-    Serial.println("in zone B");
-    if(prevZoneID != ZONE_B_ID){
-      exitZone();
-      enterZone(ZONE_B_ID);
-      Serial.println("Entered zone B from ");
-      Serial.print(prevZoneID);
-    }
-    else{
-      Serial.println("same zone, nothing changed ");
-    }
-    prevZoneID = ZONE_B_ID;
-  }
-  else{
-    prevZoneID = "not a zone";
-    Serial.println("leaving zone");
-    exitZone();
-  }
-}
-
 void sendMessage() {
   String msg = "Hello from node ";
   msg += mesh.getNodeId();
@@ -203,27 +188,18 @@ void sendMessage() {
 void setup() {
   Serial.begin(115200);
 
-//mesh.setDebugMsgTypes( ERROR | MESH_STATUS | CONNECTION | SYNC | COMMUNICATION | GENERAL | MSG_TYPES | REMOTE ); // all types on
   mesh.setDebugMsgTypes( ERROR | STARTUP );  // set before init() so that you can see startup messages
   meshInit(ZONE_A_ID, MESH_PASSWORD, MESH_PORT);
-//  mesh.onReceive(&receivedCallback);
-//  mesh.onNewConnection(&newConnectionCallback);
-//  mesh.onChangedConnections(&changedConnectionCallback);
-//  mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
 
   Serial.println("creating scheduler tasks ");
   Serial.println("taskSendmessage");
   userScheduler.addTask( taskSendMessage );
 
-  Serial.println("taskUpdatePosition");
-  userScheduler.addTask(taskUpdateposition);
-  taskUpdateposition.setInterval(30000);
+  userScheduler.addTask(taskStateCheck);
+  taskStateCheck.setInterval(100);
+  taskStateCheck.enable();
 
-  Serial.println("taskUpdatePosition enable");
-  taskUpdateposition.enable();
-
-  //Serial.println("taskSendMessage enable");
-  //taskSendMessage.enable();
+  userScheduler.addTask(taskSendBroadcast);
 
   Serial.println("init complete");
 }
