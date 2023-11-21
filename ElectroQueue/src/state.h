@@ -13,38 +13,7 @@
 
 
 /* STRUCT TO REPRESENT A POSITION IN THE SYSTEM */
-struct Position
-{
-    int x;
-    int y;
-};
 
-/* DEFINE STATES */
-enum State
-{
-    assign_new_destination,
-    move_to_destination,
-    move_to_nearest_charging_station,
-    connect_and_broadcast,
-    queuing,
-    charging
-};
-
-
-/* CONSTANT VALUE THAT REPRESENTS THE MAXIMUM BATTERY-CONSUMPTION FOR A NODE*/
-const float max_battery_consumption = MAX_BATTERY_LEVEL / MAX_DISTANCE;
-
-/* A LIST OF ALL CHARGING STATIONS "CS" IN THE SYSTEM */
-Position charging_stations[NR_OF_CS];
-
-/* NODE ATTRIBUTES */
-int distance;
-int range;
-int load;
-float battery_level;
-float battery_consumption;
-Position current_position;
-Position destination;
 
 //statemachine functions
 Position random_position();

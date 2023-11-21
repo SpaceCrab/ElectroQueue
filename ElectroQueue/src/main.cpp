@@ -7,10 +7,10 @@
 //
 //************************************************************
 #include <painlessMesh.h>
-#include <com.h>
+//#include <com.h>
 #include <state.h>
 
-
+Scheduler userScheduler; // to control your personal task
 
 void setup() {
   Serial.begin(115200);

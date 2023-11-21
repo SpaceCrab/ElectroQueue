@@ -7,9 +7,50 @@
 
 #include <painlessMesh.h>
 
-#include <state.h>
 #include <com.h>
 
+/*Macros */
+#define NR_OF_CS 2
+#define DIMENSION_LIMIT 10
+#define MAX_DISTANCE 19
+#define MAX_LOAD 20000
+#define MIN_BATTERY_CONSUMPTION 0.3
+#define MAX_BATTERY_LEVEL 100
+
+std::list<u_int32_t> nodeList;
+
+struct Position
+{
+    int x;
+    int y;
+};
+
+/* DEFINE STATES */
+enum State
+{
+    assign_new_destination,
+    move_to_destination,
+    move_to_nearest_charging_station,
+    connect_and_broadcast,
+    queuing,
+    charging
+};
+
+
+/* CONSTANT VALUE THAT REPRESENTS THE MAXIMUM BATTERY-CONSUMPTION FOR A NODE*/
+const float max_battery_consumption = MAX_BATTERY_LEVEL / MAX_DISTANCE;
+
+/* A LIST OF ALL CHARGING STATIONS "CS" IN THE SYSTEM */
+Position charging_stations[NR_OF_CS];
+
+/* NODE ATTRIBUTES */
+int distance;
+int range;
+int load;
+float battery_level;
+float battery_consumption;
+Position current_position;
+Position destination;
 
 /* SET THE INITIAL STATE */
 State current_state = move_to_destination;
@@ -232,7 +273,7 @@ void initialize_node()
 }
 
 void handle_queuing() {
-    nodeList = mesh.getNodeList();
+    nodeList = getNodeList();
 
     // 1. Check if all responses in the list have "lower priority"
     Serial.println("in state: handle queueing ");
@@ -246,7 +287,7 @@ void handle_connect_and_broadcast(String zoneId)
     enterZone(currentZone);
     Serial.println("Connected to the mesh network");
 
-    nodeList = mesh.getNodeList();
+    nodeList = getNodeList();
     // 4. Check the list of connected nodes
     
     if (nodeList.size() == 0) {
