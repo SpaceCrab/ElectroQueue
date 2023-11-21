@@ -6,17 +6,17 @@
 //
 //
 //************************************************************
-#include "painlessMesh.h"
-//#include <scenario-simulation.cpp>
+#include <painlessMesh.h>
 #include <com.h>
 #include <state.h>
+
+
 
 void setup() {
   Serial.begin(115200);
 
   //mesh.setDebugMsgTypes( ERROR | MESH_STATUS | CONNECTION | SYNC | COMMUNICATION | GENERAL | MSG_TYPES | REMOTE ); // all types on
   mesh.setDebugMsgTypes( ERROR | STARTUP );  // set before init() so that you can see startup messages
-  meshInit(ZONE_A_ID, MESH_PASSWORD, MESH_PORT);
 
   initialize_charging_stations();
   initialize_node(); 

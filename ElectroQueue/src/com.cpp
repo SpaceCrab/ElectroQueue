@@ -1,12 +1,10 @@
-#include <com.h>
 #include <painlessMesh.h>
+#include <com.h>
 #include <state.h>
+
 
 bool networkstate = false;
 
-
-void sendMessage() ; // Prototype so PlatformIO doesn't complain
-void updatePosition();
 
 void receivedCallback( uint32_t from, String &msg ) {
   Serial.printf("startHere: Received from %u msg=%s\n", from, msg.c_str());
@@ -37,7 +35,6 @@ void meshInit(String prefix, String password, int port){
   } 
 
 }
-// User stub
 
 void exitZone(){
   if(networkstate){
@@ -65,8 +62,6 @@ void sendMessage() {
   msg += mesh.getNodeId();
   mesh.sendBroadcast( msg );
   Serial.println("sent message");
-
   // test code 
-  
   taskSendMessage.setInterval( random( TASK_SECOND * 1, TASK_SECOND * 5 ));
 }
