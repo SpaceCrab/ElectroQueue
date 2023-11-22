@@ -94,11 +94,26 @@ void compareList(){
   }
 }
 
+void printResponseList()
+{
+  // Iterate through the list and print each element
+  for (const auto &resp : responseList)
+  {
+    Serial.print("NodeID: ");
+    Serial.print(resp.nodeID);
+    Serial.print(", Higher: ");
+    Serial.println(resp.higher);
+  }
+
+  // Add a separator for better readability
+  Serial.println("------");
+}
+
 void receivedCallback( uint32_t from, String &msg ) {
   Serial.printf("startHere: Received from %u msg=%s\n", from, msg.c_str());
   /*when the recieved msg is a broadcast with prio score, compare the score.
-      if the score is lower than the own score: respond with false
-      if the score is higher than the own score: respond with true 
+      if the score is lower than the own score: respond with false and add it to the responselist
+      if the score is higher than the own score: respond with true and add it to the responselist
   */
   if(currentState != queueing) return;
   if(msg.startsWith(BROADCAST_PREFIX)){
@@ -116,6 +131,7 @@ void receivedCallback( uint32_t from, String &msg ) {
           currentTarget = from;
           taskSendSingle.setIterations(3);
           taskSendSingle.enable();
+          addToList(from,true);
         }//send response with false;
 
         if(ownScore < otherScore){
@@ -123,6 +139,7 @@ void receivedCallback( uint32_t from, String &msg ) {
           currentTarget = from;
           taskSendSingle.setIterations(3);
           taskSendSingle.enable();
+          addToList(from,false);
         }//send response with true;
       }
   }
@@ -226,7 +243,8 @@ void stateCheck(){
 
   String zoneId; 
   currentState = updateState();
-  //Serial.println(currentState);
+  Serial.println(currentState);
+  printResponseList();
 
   switch (currentState)
   {
