@@ -116,8 +116,8 @@ void printNodeList()
   // Iterate through the list and print each element
   for (const auto &nod : nodeList)
   {
-    Serial.println("NodeID: ");
-    Serial.print(nod);
+    Serial.print("NodeID: ");
+    Serial.println(nod);
   }
 
   // Add a separator for better readability
