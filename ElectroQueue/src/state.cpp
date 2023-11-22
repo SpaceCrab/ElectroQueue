@@ -1,6 +1,6 @@
 #include "state.h"
 
-state currentState = connect_broadcast;
+state currentS = connect_broadcast;
 
 std::list<u_int32_t> nodeListState;
 
