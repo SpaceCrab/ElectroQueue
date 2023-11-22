@@ -277,6 +277,7 @@ void stateCheck(){
     break;
   case queueing:
     enterZone(zoneId);
+    compareList();
     break;
   default:
     break;
