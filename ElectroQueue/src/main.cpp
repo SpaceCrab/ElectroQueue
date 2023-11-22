@@ -200,7 +200,7 @@ void enterZone(String zoneID){
 
     nodeList = mesh.getNodeList();
 
-    Serial.println("broadcasting request to charge");
+    //Serial.println("broadcasting request to charge");
     /*if(nodeList.empty()){ //checks if the network has any other nodes in it 
       Serial.println("broadcasting request to charge");
       taskSendMessage.enable();
@@ -225,6 +225,7 @@ void stateCheck(){
 
   String zoneId; 
   currentState = updateState();
+  Serial.println(currentState);
 
   switch (currentState)
   {
@@ -238,6 +239,7 @@ void stateCheck(){
   case charging:
     break;
   case queueing:
+    enterZone(zoneId);
     break;
   default:
     break;
