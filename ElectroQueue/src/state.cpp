@@ -9,11 +9,11 @@ void setNodeList(std::list<u_int32_t> newList){
 }
 
 void setState(state state){
-    currentState = state;
+    currentS = state;
 }
 
 state updateState(){
-    return currentState;
+    return currentS;
 }
 
 
