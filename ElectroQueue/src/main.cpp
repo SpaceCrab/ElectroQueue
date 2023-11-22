@@ -266,10 +266,12 @@ void stateCheck(){
   case connect_broadcast:
     zoneId = getPos();
     enterZone(zoneId);
-    currentMsg = "BROADCAST,10";// replace with real score from state machine 
-    taskSendBroadcast.setIterations(4);
-    taskSendBroadcast.enable();
-    setState(queueing); // test code REMOVE!!!!!!!
+    if(!nodeList.empty()){
+      currentMsg = "BROADCAST,10";// replace with real score from state machine 
+      taskSendBroadcast.setIterations(4);
+      taskSendBroadcast.enable();
+      setState(queueing); // test code REMOVE!!!!!!!
+    } else Serial.println("no other nodes");
     break;
   case charging:
     break;
