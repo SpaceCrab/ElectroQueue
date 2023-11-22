@@ -236,6 +236,7 @@ void stateCheck(){
     currentMsg = "BROADCAST,10";// replace with real score from state machine 
     taskSendBroadcast.setIterations(4);
     taskSendBroadcast.enable();
+    setState(queueing); // test code REMOVE!!!!!!!
     break;
   case charging:
     break;
