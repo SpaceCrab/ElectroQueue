@@ -102,6 +102,7 @@ void receivedCallback( uint32_t from, String &msg ) {
   */
   if(currentState != queueing) return;
   if(msg.startsWith(BROADCAST_PREFIX)){
+      Serial.println("Broadcast message recieved");
       int ownScore = getPrio();
       char delimiter = ',';
 
@@ -225,14 +226,14 @@ void stateCheck(){
 
   String zoneId; 
   currentState = updateState();
-  Serial.println(currentState);
+  //Serial.println(currentState);
 
   switch (currentState)
   {
   case connect_broadcast:
     zoneId = getPos();
     enterZone(zoneId);
-
+    currentMsg = "BROADCAST,10";// replace with real score from state machine 
     taskSendBroadcast.setIterations(4);
     taskSendBroadcast.enable();
     break;
