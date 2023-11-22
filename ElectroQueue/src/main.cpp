@@ -110,6 +110,19 @@ void updateOrAddNodeID(uint32_t targetNodeID, bool newHigherValue)
   responseList.push_back({targetNodeID, newHigherValue});
 }
 
+void printNodeList()
+{
+  Serial.println("nodelist:");
+  // Iterate through the list and print each element
+  for (const auto &nod : nodeList)
+  {
+    Serial.print("NodeID: ");
+    Serial.print(nod);
+  }
+
+  // Add a separator for better readability
+  Serial.println("------");
+}
 void printResponseList()
 {
   // Iterate through the list and print each element
@@ -261,6 +274,7 @@ void stateCheck(){
   currentState = updateState();
   Serial.println(currentState);
   printResponseList();
+  printNodeList();
 
   switch (currentState)
   {
