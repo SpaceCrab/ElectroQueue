@@ -91,7 +91,7 @@ void compareList(){
     } else {
       it++;
     }
-  }
+  }// test
 }
 
 void updateOrAddNodeID(uint32_t targetNodeID, bool newHigherValue)
