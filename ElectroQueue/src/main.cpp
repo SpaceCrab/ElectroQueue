@@ -94,6 +94,21 @@ void compareList(){
   }
 }
 
+void updateOrAddNodeID(uint32_t targetNodeID, bool newHigherValue)
+{
+  for (auto &resp : responseList)
+  {
+    if (resp.nodeID == targetNodeID)
+    {
+      resp.higher = newHigherValue; // Update the boolean value
+      return; // Exit the function once the update is done
+    }
+  }
+
+  // If the nodeID is not found, add a new element to the list
+  responseList.push_back({targetNodeID, newHigherValue});
+}
+
 void printResponseList()
 {
   // Iterate through the list and print each element
@@ -131,7 +146,7 @@ void receivedCallback( uint32_t from, String &msg ) {
           currentTarget = from;
           taskSendSingle.setIterations(3);
           taskSendSingle.enable();
-          addToList(from,true);
+          updateOrAddNodeID(from,true);
         }//send response with false;
 
         if(ownScore < otherScore){
@@ -139,7 +154,7 @@ void receivedCallback( uint32_t from, String &msg ) {
           currentTarget = from;
           taskSendSingle.setIterations(3);
           taskSendSingle.enable();
-          addToList(from,false);
+          updateOrAddNodeID(from,false);
         }//send response with true;
       }
   }
