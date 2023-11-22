@@ -163,7 +163,7 @@ void receivedCallback( uint32_t from, String &msg ) {
   else if(msg.startsWith(SINGLE_PREFIX));{
       bool response = false;
       if(msg.endsWith("TRUE")) response = true;
-      addToList(from,response);
+      updateOrAddNodeID(from,response);
   }
 
 }
