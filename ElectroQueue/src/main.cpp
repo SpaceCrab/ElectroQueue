@@ -85,6 +85,7 @@ void removeFromList(u_int32_t id){
 }
 
 void compareList(){
+  nodeList = mesh.getNodeList();
   for(auto it = responseList.begin();it != responseList.end();){
     if(!std::count(nodeList.begin(), nodeList.end(), it ->nodeID)){
       it = responseList.erase(it); //removes nodes not connected to the network
