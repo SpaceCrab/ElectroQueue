@@ -128,7 +128,8 @@ void printResponseList()
   // Iterate through the list and print each element
   for (const auto &resp : responseList)
   {
-    Serial.print("NodeID: ");
+    Serial.print("ResponseList");
+    Serial.println("NodeID: ");
     Serial.print(resp.nodeID);
     Serial.print(", Higher: ");
     Serial.println(resp.higher);
