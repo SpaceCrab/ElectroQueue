@@ -110,6 +110,23 @@ void updateOrAddNodeID(uint32_t targetNodeID, bool newHigherValue)
   responseList.push_back({targetNodeID, newHigherValue});
 }
 
+//returns nr of nodes with a higher priority
+int qeueuValue(){
+  int val = 0;
+  for(auto &resp : responseList){
+    if(!resp.higher) val++;
+  }
+  return val;
+}
+
+// returns true if no other node has a higher priority in the queue
+bool allResponseTrue(){
+  for(auto &resp: responseList){
+    if(!resp.higher) return false;
+  }
+  return true;
+}
+
 void printNodeList()
 {
   Serial.println("nodelist:");
@@ -286,7 +303,7 @@ void stateCheck(){
       currentMsg = "BROADCAST,10";// replace with real score from state machine 
       taskSendBroadcast.setIterations(4);
       taskSendBroadcast.enable();
-      setState(queueing); // test code REMOVE!!!!!!!
+      setState(queueing); // test code REMOVE!!!!!!! statechanges should only happen in the updateState function
     } else Serial.println("no other nodes");
     break;
   case charging:
@@ -294,6 +311,7 @@ void stateCheck(){
   case queueing:
     enterZone(zoneId);
     compareList();
+    Serial.println(qeueuValue());
     break;
   default:
     break;
