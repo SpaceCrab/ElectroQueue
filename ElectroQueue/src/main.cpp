@@ -149,10 +149,10 @@ void printNodeList()
 }
 void printResponseList()
 {
+  Serial.print("ResponseList");
   // Iterate through the list and print each element
   for (const auto &resp : responseList)
   {
-    Serial.print("ResponseList");
     Serial.println("NodeID: ");
     Serial.print(resp.nodeID);
     Serial.print(", Higher: ");
@@ -316,6 +316,7 @@ void sendMessage()
 void stateCheck()
 {
   Serial.println("checking state");
+  compareList();
   currentState = update_state();
   Serial.println(currentState);
   printResponseList();
@@ -344,7 +345,6 @@ void stateCheck()
       Serial.println("no other nodes");
     break;
   case queuing:
-    compareList();
     ready_to_charge(allResponseTrue());
     break;
   case charging:
