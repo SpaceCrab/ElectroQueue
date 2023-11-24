@@ -30,6 +30,7 @@ int queuePos = 0;
 
 String currentMsg;
 u_int32_t currentTarget;
+String zoneId;
 
 state currentState = move_to_destination;
 
@@ -315,7 +316,6 @@ void sendMessage()
 void stateCheck()
 {
   Serial.println("checking state");
-  String zoneId;
   currentState = update_state();
   Serial.println(currentState);
   // printResponseList();
@@ -325,7 +325,8 @@ void stateCheck()
   {
   case connect_and_broadcast:
     // returns a struct -> position = {x,y}
-    zoneId = get_curr_pos().x + "I" + get_curr_pos().y;
+    zoneId = String(get_curr_pos().x + "I" + get_curr_pos().y);
+    Serial.println("zone id");
     Serial.println(zoneId);
     connecting();
     enterZone(zoneId);
@@ -360,6 +361,7 @@ void setup()
   Serial.println("statemachine init");
   mesh.setDebugMsgTypes(ERROR | STARTUP); // set before init() so that you can see startup messages
   meshInit(ZONE_A_ID, MESH_PASSWORD, MESH_PORT);
+  networkstate = true;
 
   initialize_node(mesh.getNodeId());
   Serial.println("creating scheduler tasks ");
