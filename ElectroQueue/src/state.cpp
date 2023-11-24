@@ -15,6 +15,8 @@ int wait_count;
 float priority;
 int id;
 int place_in_queue;
+bool broadcast_complete = false;
+bool first_in_queue = false;
 position current_position;
 position destination;
 position charging_stations[NR_OF_CS];
@@ -51,12 +53,12 @@ state update_state()
 
     case connect_and_broadcast:
         Serial.println("In state: connect and broadcast");
-        next_state = queuing;
+        if(broadcast_complete)next_state = queuing;
         break;
 
     case queuing:
         Serial.println("In state: queuing");
-        next_state = charging;
+        if(first_in_queue)next_state = charging;
         break;
 
     case charging:
@@ -105,7 +107,7 @@ state handle_move_charging_station()
     }
 }
 
-void initialize_node()
+void initialize_node(int id)
 {
     load = std::rand() % MAX_LOAD + 1;
     battery_level = std::rand() % (MAX_BATTERY_LEVEL + 1);
@@ -284,4 +286,16 @@ void set_destination(position dest)
 void setNodeList(std::list<u_int32_t> newList)
 {
     nodeListState = newList;
+}
+
+void broadcastComplete(){
+    broadcast_complete = true;
+}
+
+void connecting(){
+    broadcast_complete = false;
+}
+
+void ready_to_charge(bool ready){
+    first_in_queue = ready;
 }

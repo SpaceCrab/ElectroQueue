@@ -116,6 +116,23 @@ void updateOrAddNodeID(uint32_t targetNodeID, bool newHigherValue)
   responseList.push_back({targetNodeID, newHigherValue});
 }
 
+//returns nr of nodes with a higher priority
+int qeueuValue(){
+  int val = 0;
+  for(auto &resp : responseList){
+    if(!resp.higher) val++;
+  }
+  return val;
+}
+
+// returns true if no other node has a higher priority in the queue
+bool allResponseTrue(){
+  for(auto &resp: responseList){
+    if(!resp.higher) return false;
+  }
+  return true;
+}
+
 void printNodeList()
 {
   Serial.println("nodelist:");
@@ -308,24 +325,26 @@ void stateCheck()
   {
   case connect_and_broadcast:
     // returns a struct -> position = {x,y}
-    zoneId = get_curr_pos();
-
+    zoneId = get_curr_pos().x + "," + get_curr_pos().y;
+    connecting();
     enterZone(zoneId);
     if (!nodeList.empty())
     {
-      currentMsg = "BROADCAST,10"; // replace with real score from state machine
+      String prio = String(calc_prio());
+      currentMsg = "BROADCAST," + prio; // replace with real score from state machine
       taskSendBroadcast.setIterations(4);
       taskSendBroadcast.enable();
-      set_state(queuing); // test code REMOVE!!!!!!!
+      broadcastComplete();
     }
     else
       Serial.println("no other nodes");
     break;
-  case charging:
-    break;
   case queuing:
     enterZone(zoneId);
     compareList();
+    ready_to_charge(allResponseTrue());
+    break;
+  case charging:
     break;
   default:
     break;
@@ -336,12 +355,12 @@ void stateCheck()
 void setup()
 {
   Serial.begin(115200);
-  initialize_node();
   initialize_charging_stations();
   Serial.println("statemachine init");
   mesh.setDebugMsgTypes(ERROR | STARTUP); // set before init() so that you can see startup messages
   meshInit(ZONE_A_ID, MESH_PASSWORD, MESH_PORT);
 
+  initialize_node(mesh.getNodeId());
   Serial.println("creating scheduler tasks ");
   Serial.println("taskSendmessage");
   userScheduler.addTask(taskSendMessage);
