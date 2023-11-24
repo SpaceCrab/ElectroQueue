@@ -325,9 +325,10 @@ void stateCheck()
   {
   case connect_and_broadcast:
     // returns a struct -> position = {x,y}
-    zoneId = String(get_curr_pos().x + "I" + get_curr_pos().y);
+    zoneId = "test";
     Serial.println("zone id");
     Serial.println(zoneId);
+    
     connecting();
     enterZone(zoneId);
     if (!nodeList.empty())
