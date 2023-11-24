@@ -325,7 +325,8 @@ void stateCheck()
   {
   case connect_and_broadcast:
     // returns a struct -> position = {x,y}
-    zoneId = get_curr_pos().x + "," + get_curr_pos().y;
+    zoneId = get_curr_pos().x + "I" + get_curr_pos().y;
+    Serial.println(zoneId);
     connecting();
     enterZone(zoneId);
     if (!nodeList.empty())
@@ -340,13 +341,13 @@ void stateCheck()
       Serial.println("no other nodes");
     break;
   case queuing:
-    enterZone(zoneId);
     compareList();
     ready_to_charge(allResponseTrue());
     break;
   case charging:
     break;
   default:
+    exitZone();
     break;
   }
 }
@@ -377,6 +378,7 @@ void setup()
   userScheduler.addTask(taskSendBroadcast);
 
   Serial.println("init complete");
+  exitZone();
 }
 
 void loop()
