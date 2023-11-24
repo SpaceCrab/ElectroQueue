@@ -61,7 +61,7 @@ state update_state()
 
     case charging:
         Serial.println("In state: charging");
-        next_state = move_to_destination;
+        next_state = handle_charging();
         break;
     }
     current_state = next_state;
@@ -102,6 +102,20 @@ state handle_move_charging_station()
     else
     {
         return move_to_charging_station;
+    }
+}
+
+state handle_charging()
+{
+    battery_level += battery_consumption;
+    if (battery_level < MAX_BATTERY_LEVEL)
+    {
+        return charging;
+    }
+    else
+    {
+        battery_level = 100;
+        return move_to_destination;
     }
 }
 
@@ -159,6 +173,8 @@ float calc_prio()
     {
         priority += ((distance - range) / distance + factor_range) * 2;
     }
+
+    // Wait-time priority calculation ?
 
     return priority;
 }

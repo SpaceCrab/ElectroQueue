@@ -42,6 +42,7 @@ void print_info();
 
 state handle_move_destination();
 state handle_move_charging_station();
+state handle_charging();
 
 /*setters*/
 void setNodeList(std::list<u_int32_t> nodeList);
