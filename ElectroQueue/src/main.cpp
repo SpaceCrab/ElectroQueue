@@ -325,7 +325,8 @@ void stateCheck()
   {
   case connect_and_broadcast:
     // returns a struct -> position = {x,y}
-    zoneId = "test";
+    zoneId = get_curr_pos().x;
+    zoneId += get_curr_pos().y;
     Serial.println("zone id");
     Serial.println(zoneId);
     

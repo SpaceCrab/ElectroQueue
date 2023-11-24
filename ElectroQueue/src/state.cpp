@@ -37,7 +37,7 @@ state update_state()
     Serial.print(current_position.x);
     Serial.print(current_position.y);
     Serial.println(" ");
-
+    
     switch (current_state)
     {
     case assign_new_destination:
