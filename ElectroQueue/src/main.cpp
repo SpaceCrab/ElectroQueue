@@ -12,18 +12,17 @@
 
 #include "state.h"
 
-
-#define   MESH_PREFIX     "whateverYouLike"
-#define   MESH_PASSWORD   "somethingSneaky"
-#define   MESH_PORT       5555
-#define   ZONE_A_Y        4
-#define   ZONE_A_X        4
-#define   ZONE_B_Y        5
-#define   ZONE_B_x        5
-#define   ZONE_A_ID       "zone A"
-#define   ZONE_B_ID       "zone B"
-#define   BROADCAST_PREFIX "BROADCAST"
-#define   SINGLE_PREFIX   "SINGLE"
+#define MESH_PREFIX "whateverYouLike"
+#define MESH_PASSWORD "somethingSneaky"
+#define MESH_PORT 5555
+#define ZONE_A_Y 4
+#define ZONE_A_X 4
+#define ZONE_B_Y 5
+#define ZONE_B_x 5
+#define ZONE_A_ID "zone A"
+#define ZONE_B_ID "zone B"
+#define BROADCAST_PREFIX "BROADCAST"
+#define SINGLE_PREFIX "SINGLE"
 
 int posY = 0;
 int posX = 0;
@@ -32,7 +31,7 @@ int queuePos = 0;
 String currentMsg;
 u_int32_t currentTarget;
 
-state currentState = connect_broadcast;
+state currentState = move_to_destination;
 
 struct response
 {
@@ -40,32 +39,31 @@ struct response
   bool higher;
 };
 
-
-
 std::list<response> responseList;
 std::list<u_int32_t> nodeList;
 std::list<u_int32_t>::iterator nodeListIt;
 
-String prevZoneID ;
+String prevZoneID;
 
 bool networkstate = false;
 
 uint32_t testMessagesSent = 0;
 
 Scheduler userScheduler; // to control your personal task
-painlessMesh  mesh;
+painlessMesh mesh;
 
-void sendMessage() ; // Prototype so PlatformIO doesn't complain
+void sendMessage(); // Prototype so PlatformIO doesn't complain
 void sendBroadcast();
 void sendSingleMsg();
 void stateCheck();
 
-Task taskSendMessage( TASK_SECOND * 1 , TASK_FOREVER, &sendMessage );
+Task taskSendMessage(TASK_SECOND * 1, TASK_FOREVER, &sendMessage);
 Task taskStateCheck(TASK_SECOND * 1, TASK_FOREVER, &stateCheck);
 Task taskSendBroadcast(TASK_SECOND * 1, TASK_FOREVER, &sendBroadcast);
-Task taskSendSingle(TASK_SECOND * 1 , TASK_FOREVER, &sendSingleMsg );
+Task taskSendSingle(TASK_SECOND * 1, TASK_FOREVER, &sendSingleMsg);
 
-void addToList(u_int32_t nodeID, bool higherScore){
+void addToList(u_int32_t nodeID, bool higherScore)
+{
   // add a node and its response to the responseList
   struct response newResponse;
 
@@ -76,23 +74,31 @@ void addToList(u_int32_t nodeID, bool higherScore){
   responseList.insert(responseListIt, newResponse);
 }
 
-void removeFromList(u_int32_t id){
-  //remove a node and its response from the response list  
+void removeFromList(u_int32_t id)
+{
+  // remove a node and its response from the response list
   std::list<response>::iterator responseListIt;
-  for (responseListIt = responseList.begin(); responseListIt != responseList.end(); ++responseListIt){
-    if(responseListIt->nodeID == id)responseList.erase(responseListIt) ;
+  for (responseListIt = responseList.begin(); responseListIt != responseList.end(); ++responseListIt)
+  {
+    if (responseListIt->nodeID == id)
+      responseList.erase(responseListIt);
   }
 }
 
-void compareList(){
+void compareList()
+{
   nodeList = mesh.getNodeList();
-  for(auto it = responseList.begin();it != responseList.end();){
-    if(!std::count(nodeList.begin(), nodeList.end(), it ->nodeID)){
-      it = responseList.erase(it); //removes nodes not connected to the network
-    } else {
+  for (auto it = responseList.begin(); it != responseList.end();)
+  {
+    if (!std::count(nodeList.begin(), nodeList.end(), it->nodeID))
+    {
+      it = responseList.erase(it); // removes nodes not connected to the network
+    }
+    else
+    {
       it++;
     }
-  }// test
+  } // test
 }
 
 void updateOrAddNodeID(uint32_t targetNodeID, bool newHigherValue)
@@ -102,7 +108,7 @@ void updateOrAddNodeID(uint32_t targetNodeID, bool newHigherValue)
     if (resp.nodeID == targetNodeID)
     {
       resp.higher = newHigherValue; // Update the boolean value
-      return; // Exit the function once the update is done
+      return;                       // Exit the function once the update is done
     }
   }
 
@@ -139,96 +145,113 @@ void printResponseList()
   Serial.println("------");
 }
 
-void receivedCallback( uint32_t from, String &msg ) {
+void receivedCallback(uint32_t from, String &msg)
+{
   Serial.printf("startHere: Received from %u msg=%s\n", from, msg.c_str());
   /*when the recieved msg is a broadcast with prio score, compare the score.
       if the score is lower than the own score: respond with false and add it to the responselist
       if the score is higher than the own score: respond with true and add it to the responselist
   */
-  if(currentState != queueing) return;
-  if(msg.startsWith(BROADCAST_PREFIX)){
-      Serial.println("Broadcast message recieved");
-      int ownScore = getPrio();
-      char delimiter = ',';
+  if (currentState != queuing)
+    return;
+  if (msg.startsWith(BROADCAST_PREFIX))
+  {
+    Serial.println("Broadcast message recieved");
+    float ownScore = calc_prio();
+    char delimiter = ',';
 
-      int pos = msg.indexOf(delimiter);
-      if(pos != -1){
-        String scoreStr = msg.substring(pos + 1);
-        int otherScore = scoreStr.toInt();
+    int pos = msg.indexOf(delimiter);
+    if (pos != -1)
+    {
+      String scoreStr = msg.substring(pos + 1);
+      int otherScore = scoreStr.toInt();
 
-        if(ownScore > otherScore){
-          currentMsg = "SINGLE,FALSE";
-          currentTarget = from;
-          taskSendSingle.setIterations(3);
-          taskSendSingle.enable();
-          updateOrAddNodeID(from,true);
-        }//send response with false;
+      if (ownScore > otherScore)
+      {
+        currentMsg = "SINGLE,FALSE";
+        currentTarget = from;
+        taskSendSingle.setIterations(3);
+        taskSendSingle.enable();
+        updateOrAddNodeID(from, true);
+      } // send response with false;
 
-        if(ownScore < otherScore){
-          currentMsg = "SINGLE,TRUE";
-          currentTarget = from;
-          taskSendSingle.setIterations(3);
-          taskSendSingle.enable();
-          updateOrAddNodeID(from,false);
-        }//send response with true;
-      }
+      if (ownScore < otherScore)
+      {
+        currentMsg = "SINGLE,TRUE";
+        currentTarget = from;
+        taskSendSingle.setIterations(3);
+        taskSendSingle.enable();
+        updateOrAddNodeID(from, false);
+      } // send response with true;
+    }
   }
   /*when the recieved msg is a response: store the response in the responselist
-  */
-  else if(msg.startsWith(SINGLE_PREFIX));{
-      bool response = false;
-      if(msg.endsWith("TRUE")) response = true;
-      updateOrAddNodeID(from,response);
+   */
+  else if (msg.startsWith(SINGLE_PREFIX))
+    ;
+  {
+    bool response = false;
+    if (msg.endsWith("TRUE"))
+      response = true;
+    updateOrAddNodeID(from, response);
   }
-
 }
 
-void newConnectionCallback(uint32_t nodeId) {
+void newConnectionCallback(uint32_t nodeId)
+{
   Serial.printf("--> startHere: New Connection, nodeId = %u\n", nodeId);
 }
 
-void changedConnectionCallback() {
+void changedConnectionCallback()
+{
   Serial.printf("Changed connections\n");
   nodeList = mesh.getNodeList();
   setNodeList(nodeList);
 }
 
-void nodeTimeAdjustedCallback(int32_t offset) {
-  Serial.printf("Adjusted time %u. Offset = %d\n", mesh.getNodeTime(),offset);
+void nodeTimeAdjustedCallback(int32_t offset)
+{
+  Serial.printf("Adjusted time %u. Offset = %d\n", mesh.getNodeTime(), offset);
 }
 
-void meshInit(String prefix, String password, int port){
-  if(!networkstate){
-    mesh.init( prefix, password, &userScheduler, port );
+void meshInit(String prefix, String password, int port)
+{
+  if (!networkstate)
+  {
+    mesh.init(prefix, password, &userScheduler, port);
     networkstate = true;
     mesh.onReceive(&receivedCallback);
     mesh.onNewConnection(&newConnectionCallback);
     mesh.onChangedConnections(&changedConnectionCallback);
     mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
-  } 
-
+  }
 }
 // User stub
 
-
-void sendBroadcast(){
-  mesh.sendBroadcast( currentMsg );
+void sendBroadcast()
+{
+  mesh.sendBroadcast(currentMsg);
   Serial.println("sent broadcast message");
 }
 
-void sendSingleMsg(){
+void sendSingleMsg()
+{
   mesh.sendSingle(currentTarget, currentMsg);
 }
 
-
-bool nodesInNetwork(){
+bool nodesInNetwork()
+{
   nodeList = mesh.getNodeList();
-  if(nodeList.empty()) return true;
-  else return false;
+  if (nodeList.empty())
+    return true;
+  else
+    return false;
 }
 
-void exitZone(){
-  if(networkstate){
+void exitZone()
+{
+  if (networkstate)
+  {
     taskSendMessage.disable();
     mesh.stop();
     networkstate = false;
@@ -236,8 +259,9 @@ void exitZone(){
   }
 }
 
-void enterZone(String zoneID){
-  if(!networkstate)
+void enterZone(String zoneID)
+{
+  if (!networkstate)
   {
     Serial.println("entered zone ");
     Serial.println(zoneID);
@@ -248,50 +272,58 @@ void enterZone(String zoneID){
 
     nodeList = mesh.getNodeList();
 
-    //Serial.println("broadcasting request to charge");
-    /*if(nodeList.empty()){ //checks if the network has any other nodes in it 
+    // Serial.println("broadcasting request to charge");
+    if (nodeList.empty())
+    { // checks if the network has any other nodes in it
       Serial.println("broadcasting request to charge");
       taskSendMessage.enable();
-    }*/
+    }
   }
 }
 
 // test function to set a random position
-void sendMessage() {
+void sendMessage()
+{
   String msg = "Hello from node ";
   msg += mesh.getNodeId();
-  mesh.sendBroadcast( msg );
+  mesh.sendBroadcast(msg);
   testMessagesSent++;
   Serial.println("sent message");
 
-  // test code 
-  
-  taskSendMessage.setInterval( random( TASK_SECOND * 1, TASK_SECOND * 5 ));
+  // test code
+
+  taskSendMessage.setInterval(random(TASK_SECOND * 1, TASK_SECOND * 5));
 }
 
-void stateCheck(){
-
-  String zoneId; 
-  currentState = updateState();
+void stateCheck()
+{
+  Serial.println("checking state");
+  String zoneId;
+  currentState = update_state();
   Serial.println(currentState);
-  printResponseList();
-  printNodeList();
+  // printResponseList();
+  // printNodeList();
 
   switch (currentState)
   {
-  case connect_broadcast:
-    zoneId = getPos();
+  case connect_and_broadcast:
+    // returns a struct -> position = {x,y}
+    zoneId = get_curr_pos();
+
     enterZone(zoneId);
-    if(!nodeList.empty()){
-      currentMsg = "BROADCAST,10";// replace with real score from state machine 
+    if (!nodeList.empty())
+    {
+      currentMsg = "BROADCAST,10"; // replace with real score from state machine
       taskSendBroadcast.setIterations(4);
       taskSendBroadcast.enable();
-      setState(queueing); // test code REMOVE!!!!!!!
-    } else Serial.println("no other nodes");
+      set_state(queuing); // test code REMOVE!!!!!!!
+    }
+    else
+      Serial.println("no other nodes");
     break;
   case charging:
     break;
-  case queueing:
+  case queuing:
     enterZone(zoneId);
     compareList();
     break;
@@ -301,19 +333,25 @@ void stateCheck(){
 }
 // Needed for painless library
 
-void setup() {
+void setup()
+{
   Serial.begin(115200);
-
-  mesh.setDebugMsgTypes( ERROR | STARTUP );  // set before init() so that you can see startup messages
+  initialize_node();
+  initialize_charging_stations();
+  Serial.println("statemachine init");
+  mesh.setDebugMsgTypes(ERROR | STARTUP); // set before init() so that you can see startup messages
   meshInit(ZONE_A_ID, MESH_PASSWORD, MESH_PORT);
 
   Serial.println("creating scheduler tasks ");
   Serial.println("taskSendmessage");
-  userScheduler.addTask( taskSendMessage );
+  userScheduler.addTask(taskSendMessage);
 
+  Serial.println("adding tasks");
   userScheduler.addTask(taskStateCheck);
   taskStateCheck.setInterval(100);
+  Serial.println("statemachine enable");
   taskStateCheck.enable();
+  Serial.println("init done");
 
   userScheduler.addTask(taskSendSingle);
 
@@ -322,7 +360,7 @@ void setup() {
   Serial.println("init complete");
 }
 
-void loop() {
+void loop()
+{
   mesh.update();
 }
-
