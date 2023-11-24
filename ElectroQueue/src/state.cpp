@@ -3,6 +3,12 @@
 #include <cstdlib> // For rand() and srand()
 #include <ctime>   // For time()
 
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+// Define the OLED object as an external variable
+extern Adafruit_SSD1306 oled;
+
 const float max_battery_consumption = MAX_BATTERY_LEVEL / MAX_DISTANCE;
 
 /* NODE ATTRIBUTES */
@@ -67,6 +73,9 @@ state update_state()
     current_state = next_state;
 
     update_values();
+    // a method that updates the values on the display
+    print_to_OLED_battery(battery_level);
+    print_to_OLED_load(load);
     print_info();
 
     return current_state;
@@ -107,13 +116,21 @@ state handle_move_charging_station()
 
 void initialize_node()
 {
-    load = std::rand() % MAX_LOAD + 1;
-    battery_level = std::rand() % (MAX_BATTERY_LEVEL + 1);
+    // Seed the random number generator with the current time
+    //std::srand(std::time(nullptr));
+
+    load = random(1, MAX_LOAD + 1);
+    battery_level = random(MAX_BATTERY_LEVEL + 1);
     battery_consumption = calc_battery_consumption();
     current_position = random_position();
     destination = random_position();
     distance = calc_distance();
     range = calc_range();
+    //Function to print initialized values to OLED display
+    //print_to_OLED_load(load);
+    //print_to_OLED_battery(battery_level);
+    Serial.println("Load in init node: " + load); // Alicia testing delete
+    Serial.println("Battery in init node: " + int(battery_level)); // Alicia testing delete
 }
 
 void initialize_charging_stations()
@@ -166,7 +183,8 @@ float calc_prio()
 position random_position()
 {
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
-    position p = {std::rand() % 10, std::rand() % 10};
+    //position p = {std::rand() % 10, std::rand() % 10};
+    position p = {random(10), random(10)};
     return p;
 }
 
@@ -234,13 +252,14 @@ position nearest_charging_station()
 
 void print_info()
 {
-    Serial.println("current position x: " + String(current_position.x) + "  y: " + String(current_position.y));
-    Serial.println("destination  x: " + String(destination.x) + "  y: " + String(destination.y));
+    //Serial.println("current position x: " + String(current_position.x) + "  y: " + String(current_position.y));
+    //Serial.println("destination  x: " + String(destination.x) + "  y: " + String(destination.y));
     Serial.println("battery-level: " + String(battery_level));
-    Serial.println("battery-consumption: " + String(battery_consumption));
-    Serial.println("range: " + String(range));
-    Serial.println("distance: " + String(distance));
-    Serial.println("nearest station x: " + String(nearest_charging_station().x) + "  y: " + String(nearest_charging_station().y));
+    Serial.println("load: " + String(load));
+    //Serial.println("battery-consumption: " + String(battery_consumption));
+    //Serial.println("range: " + String(range));
+    //Serial.println("distance: " + String(distance));
+    //Serial.println("nearest station x: " + String(nearest_charging_station().x) + "  y: " + String(nearest_charging_station().y));
     Serial.println("----------------------------------------------");
     // Serial.println("load: " + String(load) + " kg");
 }
@@ -284,4 +303,40 @@ void set_destination(position dest)
 void setNodeList(std::list<u_int32_t> newList)
 {
     nodeListState = newList;
+}
+
+void print_to_OLED_load(int value) {
+  // x, y width, height, color 
+  oled.fillRect(60, 37, 40, 10, BLACK);
+  oled.setTextSize(1);
+  oled.setTextColor(WHITE);
+  oled.setCursor(60,37);
+  oled.println(value);
+  oled.display();
+}
+
+void print_to_OLED_battery(float value){
+  // x, y width, height, color 
+  oled.fillRect(32, 57, 18, 10, BLACK);
+  oled.setTextSize(1);
+  oled.setTextColor(WHITE);
+  oled.setCursor(32,57);
+  oled.println(int(value));
+  oled.display();    
+}
+
+void print_to_OLED_queue(int value){
+  // x, y width, height, color 
+  oled.fillRect(67, 27, 15, 10, BLACK); 
+  oled.setTextSize(1);
+  oled.setTextColor(WHITE);
+  oled.setCursor(67,27);
+  oled.println(value);
+  oled.display();     
+}
+
+void print_not_in_queue_OLED(){
+  // x, y width, height, color 
+  oled.fillRect(67, 27, 15, 10, BLACK); 
+  oled.display();     
 }

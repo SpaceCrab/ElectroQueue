@@ -55,4 +55,10 @@ int get_load();
 int get_place_in_queue();
 float get_bat_lev();
 
+// Print for OLED
+void print_to_OLED_load(int value);
+void print_to_OLED_battery(float value);
+void print_to_OLED_queue(int value);
+void print_not_in_queue_OLED();
+
 #endif

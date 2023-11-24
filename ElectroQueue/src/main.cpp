@@ -12,6 +12,12 @@
 
 #include "state.h"
 
+// Includes for OLED display
+#include <Wire.h>
+#include <SPI.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
 #define MESH_PREFIX "whateverYouLike"
 #define MESH_PASSWORD "somethingSneaky"
 #define MESH_PORT 5555
@@ -23,6 +29,12 @@
 #define ZONE_B_ID "zone B"
 #define BROADCAST_PREFIX "BROADCAST"
 #define SINGLE_PREFIX "SINGLE"
+// defines for OLED display
+#define SCREEN_WIDTH 128 
+#define SCREEN_HEIGHT 64
+
+// declare an SSD1306 display object connected to I2C
+Adafruit_SSD1306 oled(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1); 
 
 int posY = 0;
 int posX = 0;
@@ -308,7 +320,7 @@ void stateCheck()
   {
   case connect_and_broadcast:
     // returns a struct -> position = {x,y}
-    zoneId = get_curr_pos();
+    //zoneId = get_curr_pos();
 
     enterZone(zoneId);
     if (!nodeList.empty())
@@ -316,7 +328,7 @@ void stateCheck()
       currentMsg = "BROADCAST,10"; // replace with real score from state machine
       taskSendBroadcast.setIterations(4);
       taskSendBroadcast.enable();
-      set_state(queuing); // test code REMOVE!!!!!!!
+      //set_state(queuing); // test code REMOVE!!!!!!!
     }
     else
       Serial.println("no other nodes");
@@ -336,8 +348,7 @@ void stateCheck()
 void setup()
 {
   Serial.begin(115200);
-  initialize_node();
-  initialize_charging_stations();
+  
   Serial.println("statemachine init");
   mesh.setDebugMsgTypes(ERROR | STARTUP); // set before init() so that you can see startup messages
   meshInit(ZONE_A_ID, MESH_PASSWORD, MESH_PORT);
@@ -358,9 +369,46 @@ void setup()
   userScheduler.addTask(taskSendBroadcast);
 
   Serial.println("init complete");
+
+ //Setup part for OLED display
+
+// initialize OLED display with address 0x3C for 128x64
+    if (!oled.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+      Serial.println(F("SSD1306 allocation failed"));
+      while (true);
+    }
+  delay(2000);                    // wait for initializing
+  oled.clearDisplay();            // clear display
+
+  oled.setTextSize(1);         
+  oled.setTextColor(WHITE);      
+  oled.setCursor(32, 17);         
+  oled.println("Q:");             // Nodes queue 
+  oled.setCursor(60, 17);         
+  oled.println("ID:");           // Nodes ID 
+  oled.setCursor(32, 27);
+  oled.println("Range:");         // Range
+  oled.setCursor(32, 37);         
+  oled.println("Dist:");          // Distance 
+  oled.setCursor(32, 47);         
+  oled.println("Cons:");          // Battery consumtion  
+  oled.setCursor(32, 57);         
+  oled.println("Batt:");          // Battery levet
+  oled.setCursor(86, 57);         
+  oled.println('%');
+  oled.display();                 // show on OLED
+
+  
+  // Must be here to work with OLED
+  initialize_node();
+  initialize_charging_stations();
+
 }
 
 void loop()
 {
-  mesh.update();
+  //delay(2000);
+  //mesh.update();
+  //update_state();
+
 }
