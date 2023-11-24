@@ -318,8 +318,8 @@ void stateCheck()
   Serial.println("checking state");
   currentState = update_state();
   Serial.println(currentState);
-  // printResponseList();
-  // printNodeList();
+  printResponseList();
+  printNodeList();
 
   switch (currentState)
   {
@@ -366,13 +366,10 @@ void setup()
   networkstate = true;
 
   initialize_node(mesh.getNodeId());
-  Serial.println("creating scheduler tasks ");
-  Serial.println("taskSendmessage");
-  userScheduler.addTask(taskSendMessage);
 
   Serial.println("adding tasks");
   userScheduler.addTask(taskStateCheck);
-  taskStateCheck.setInterval(100);
+  taskStateCheck.setInterval(500);
   Serial.println("statemachine enable");
   taskStateCheck.enable();
   Serial.println("init done");
