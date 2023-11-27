@@ -329,14 +329,12 @@ void stateCheck()
   {
   case connect_and_broadcast:
     // returns a struct -> position = {x,y}
-    interface-added-to-state
     zoneId = get_curr_pos().x;
     zoneId += get_curr_pos().y;
     Serial.println("zone id");
     Serial.println(zoneId);
     
     connecting();
-    state-and-priority-task-scheduler-fix
     enterZone(zoneId);
     if (!nodeList.empty())
     {
@@ -369,26 +367,6 @@ void setup()
 {
   Serial.begin(115200);
 
-  initialize_charging_stations();
-  Serial.println("statemachine init");
-  mesh.setDebugMsgTypes(ERROR | STARTUP); // set before init() so that you can see startup messages
-  meshInit(ZONE_A_ID, MESH_PASSWORD, MESH_PORT);
-  networkstate = true;
-
-  initialize_node(mesh.getNodeId());
-
-  Serial.println("adding tasks");
-  userScheduler.addTask(taskStateCheck);
-  taskStateCheck.setInterval(500);
-  Serial.println("statemachine enable");
-  taskStateCheck.enable();
-  Serial.println("init done");
-
-  userScheduler.addTask(taskSendSingle);
-
-  userScheduler.addTask(taskSendBroadcast);
-
-  Serial.println("init complete");
  //Setup part for OLED display
 
 // initialize OLED display with address 0x3C for 128x64
@@ -416,6 +394,27 @@ void setup()
   oled.setCursor(86, 57);         
   oled.println('%');
   oled.display();                 // show on OLED
+
+  initialize_charging_stations();
+  Serial.println("statemachine init");
+  mesh.setDebugMsgTypes(ERROR | STARTUP); // set before init() so that you can see startup messages
+  meshInit(ZONE_A_ID, MESH_PASSWORD, MESH_PORT);
+  networkstate = true;
+
+  initialize_node();
+
+  Serial.println("adding tasks");
+  userScheduler.addTask(taskStateCheck);
+  taskStateCheck.setInterval(500);
+  Serial.println("statemachine enable");
+  taskStateCheck.enable();
+  Serial.println("init done");
+
+  userScheduler.addTask(taskSendSingle);
+
+  userScheduler.addTask(taskSendBroadcast);
+
+  Serial.println("init complete");
 
   
   // Must be here to work with OLED

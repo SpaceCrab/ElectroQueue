@@ -35,7 +35,7 @@ int calc_distance();
 int calc_range();
 float calc_prio();
 boolean move(position dest, boolean cs);
-void initialize_node(int id);
+void initialize_node();
 void initialize_charging_stations();
 void update_values();
 void print_info();

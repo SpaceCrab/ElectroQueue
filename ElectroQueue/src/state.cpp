@@ -408,7 +408,7 @@ is only cleared.
 void print_not_in_queue_OLED(){
   oled.fillRect(44, 17, 15, 10, BLACK); 
   oled.display();     
-
+}
 void broadcastComplete(){
     broadcast_complete = true;
 }
