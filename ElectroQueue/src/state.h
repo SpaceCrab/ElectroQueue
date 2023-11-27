@@ -35,7 +35,7 @@ int calc_distance();
 int calc_range();
 float calc_prio();
 boolean move(position dest, boolean cs);
-void initialize_node();
+void initialize_node(int id);
 void initialize_charging_stations();
 void update_values();
 void print_info();
@@ -47,6 +47,11 @@ state handle_charging();
 /*setters*/
 void setNodeList(std::list<u_int32_t> nodeList);
 void set_state(state state);
+void broadcastComplete();
+void chargingComplete();
+
+void connecting();
+void ready_to_charge(bool queue_empty);
 
 /*getters*/
 
