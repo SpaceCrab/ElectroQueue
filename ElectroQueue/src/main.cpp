@@ -425,7 +425,6 @@ void setup()
 void loop()
 {
   //delay(2000);
-  //mesh.update();
-  update_state();
+  mesh.update();
   
 }
