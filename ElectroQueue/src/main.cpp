@@ -206,7 +206,6 @@ void receivedCallback(uint32_t from, String &msg)
   /*when the recieved msg is a response: store the response in the responselist
    */
   else if (msg.startsWith(SINGLE_PREFIX))
-    ;
   {
     bool response = false;
     if (msg.endsWith("TRUE"))
@@ -270,7 +269,6 @@ void exitZone()
 {
   if (networkstate)
   {
-    taskSendMessage.disable();
     mesh.stop();
     networkstate = false;
     Serial.println("left network");
@@ -346,7 +344,6 @@ void stateCheck()
     chargingComplete();
     break;
   default:
-        exitZone();
     enterZone("Default");
 
     break;
