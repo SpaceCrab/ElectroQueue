@@ -297,12 +297,9 @@ void enterZone(String zoneID)
     Serial.println("starting network.....");
     meshInit(zoneID, MESH_PASSWORD, MESH_PORT);
     networkstate = true;
-
-    nodeList = mesh.getNodeList();
   }
 }
 
-// test function to set a random position
 void sendMessage()
 {
   String msg = "Hello from node ";
@@ -353,10 +350,9 @@ void stateCheck()
     ready_to_charge(allResponseTrue());
     break;
   case charging:
-    chargingComplete();
     break;
   default:
-    enterZone("Default");
+    exitZone();
 
     break;
   }
