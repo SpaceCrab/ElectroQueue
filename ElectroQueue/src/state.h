@@ -47,6 +47,8 @@ state handle_move_charging_station();
 void setNodeList(std::list<u_int32_t> nodeList);
 void set_state(state state);
 void broadcastComplete();
+void chargingComplete();
+
 void connecting();
 void ready_to_charge(bool queue_empty);
 

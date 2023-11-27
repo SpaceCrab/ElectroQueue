@@ -16,6 +16,8 @@ float priority;
 int id;
 int place_in_queue;
 bool broadcast_complete = false;
+bool charging_complete = false;
+
 bool first_in_queue = false;
 position current_position;
 position destination;
@@ -58,17 +60,27 @@ state update_state()
 
     case connect_and_broadcast:
         Serial.println("In state: connect and broadcast");
-        if(broadcast_complete)next_state = queuing;
+        if(broadcast_complete){
+            next_state = queuing;
+            broadcast_complete = false;
+        }
+        
         break;
 
     case queuing:
         Serial.println("In state: queuing");
-        if(first_in_queue)next_state = charging;
+        if(first_in_queue){
+            next_state = charging;
+            first_in_queue = false;
+        }
         break;
 
     case charging:
         Serial.println("In state: charging");
-        next_state = move_to_destination;
+        if(charging_complete){
+            next_state = move_to_destination;
+            charging_complete = false;
+        }
         break;
     }
     current_state = next_state;
@@ -295,6 +307,9 @@ void setNodeList(std::list<u_int32_t> newList)
 
 void broadcastComplete(){
     broadcast_complete = true;
+}
+void chargingComplete(){
+    charging_complete = true;
 }
 
 void connecting(){

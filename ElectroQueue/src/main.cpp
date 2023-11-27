@@ -261,9 +261,9 @@ bool nodesInNetwork()
 {
   nodeList = mesh.getNodeList();
   if (nodeList.empty())
-    return true;
-  else
     return false;
+  else
+    return true;
 }
 
 void exitZone()
@@ -343,14 +343,18 @@ void stateCheck()
     }
     else
       Serial.println("no other nodes");
+      //broadcastComplete();
+
     break;
   case queuing:
     ready_to_charge(allResponseTrue());
     break;
   case charging:
+    chargingComplete();
     break;
   default:
-    exitZone();
+        exitZone();
+
     break;
   }
 }
