@@ -3,6 +3,12 @@
 #include <cstdlib> // For rand() and srand()
 #include <ctime>   // For time()
 
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+// Define the OLED object as an external variable
+extern Adafruit_SSD1306 oled;
+
 const float max_battery_consumption = MAX_BATTERY_LEVEL / MAX_DISTANCE;
 
 /* NODE ATTRIBUTES */
@@ -83,8 +89,9 @@ state update_state()
     }
     current_state = next_state;
 
-    update_values();
-    print_info();
+    update_values(); // Updates values
+    update_OLED();   // Show valuse
+    print_info();    // Terminal printlines
 
     return current_state;
 }
@@ -138,13 +145,19 @@ state handle_charging()
 void initialize_node()
 
 {
-    load = std::rand() % MAX_LOAD + 1;
-    battery_level = std::rand() % (MAX_BATTERY_LEVEL + 1);
+    // Seed the random number generator with the current time
+    //std::srand(std::time(nullptr));
+
+    load = random(1, MAX_LOAD + 1);
+    battery_level = random(MAX_BATTERY_LEVEL + 1);
     battery_consumption = calc_battery_consumption();
     current_position = random_position();
     destination = random_position();
     distance = calc_distance();
     range = calc_range();
+
+    //Function to print ID value to OLED display once
+    print_to_OLED_ID(id); 
 }
 
 void initialize_charging_stations()
@@ -199,7 +212,8 @@ float calc_prio()
 position random_position()
 {
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
-    position p = {std::rand() % 10, std::rand() % 10};
+    //position p = {std::rand() % 10, std::rand() % 10};
+    position p = {random(10), random(10)};
     return p;
 }
 
@@ -270,6 +284,7 @@ void print_info()
     Serial.println("current position x: " + String(current_position.x) + "  y: " + String(current_position.y));
     Serial.println("destination  x: " + String(destination.x) + "  y: " + String(destination.y));
     Serial.println("battery-level: " + String(battery_level));
+    Serial.println("load: " + String(load));
     Serial.println("battery-consumption: " + String(battery_consumption));
     Serial.println("range: " + String(range));
     Serial.println("distance: " + String(distance));
@@ -319,6 +334,81 @@ void setNodeList(std::list<u_int32_t> newList)
     nodeListState = newList;
 }
 
+void update_OLED(){
+    if(current_state == queuing){
+        print_to_OLED_battery(place_in_queue);
+    }
+    else {
+        print_not_in_queue_OLED();
+        print_to_OLED_range(range);
+        print_to_OLED_dist(distance);
+        print_to_OLED_consumption(battery_consumption);
+        print_to_OLED_battery(battery_level);
+    }
+}
+
+/* 
+All print to OLED methods below starts with clearing the display 
+from the old value with the function fillRect(x, y width, height, color ). 
+Then the new values prints on the specific coordinates.
+ */
+void print_to_OLED_queue(int value){
+  oled.fillRect(44, 17, 15, 10, BLACK); 
+  oled.setTextSize(1);
+  oled.setTextColor(WHITE);
+  oled.setCursor(44,17);
+  oled.println(value);
+  oled.display();     
+}
+void print_to_OLED_ID(int value){
+  oled.setTextSize(1);
+  oled.setTextColor(WHITE);
+  oled.setCursor(76,17);
+  oled.println(value);
+  oled.display();     
+}
+void print_to_OLED_range(int value) {
+  oled.fillRect(69, 27, 40, 10, BLACK);
+  oled.setTextSize(1);
+  oled.setTextColor(WHITE);
+  oled.setCursor(69,27);
+  oled.println(value);
+  oled.display();
+}
+void print_to_OLED_dist(int value) {
+  oled.fillRect(69, 37, 40, 10, BLACK);
+  oled.setTextSize(1);
+  oled.setTextColor(WHITE);
+  oled.setCursor(69,37);
+  oled.println(value);
+  oled.display();
+}
+void print_to_OLED_consumption(float value) { 
+  oled.fillRect(69, 47, 40, 10, BLACK);
+  oled.setTextSize(1);
+  oled.setTextColor(WHITE);
+  oled.setCursor(69,47);
+  oled.println(value);
+  oled.display();
+}
+void print_to_OLED_battery(float value){
+  oled.fillRect(65, 57, 15, 10, BLACK);
+  oled.setTextSize(1);
+  oled.setTextColor(WHITE);
+  oled.setCursor(65,57);
+  oled.println(int(value));
+  oled.display();    
+}
+
+/*
+This method is called when a node is not at a charging station 
+to remove its queue value from display. No value is set, display 
+is only cleared.
+*/
+void print_not_in_queue_OLED(){
+  oled.fillRect(44, 17, 15, 10, BLACK); 
+  oled.display();     
+
 void broadcastComplete(){
     broadcast_complete = true;
 }
@@ -332,4 +422,5 @@ void connecting(){
 
 void ready_to_charge(bool ready){
     first_in_queue = ready;
+
 }
