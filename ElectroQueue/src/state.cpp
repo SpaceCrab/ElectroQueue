@@ -72,11 +72,9 @@ state update_state()
     }
     current_state = next_state;
 
-    update_values();
-    // a method that updates the values on the display
-    print_to_OLED_battery(battery_level);
-    print_to_OLED_load(load);
-    print_info();
+    update_values(); // Updates values
+    update_OLED();   // Show valuse
+    print_info();    // Terminal printlines
 
     return current_state;
 }
@@ -126,11 +124,9 @@ void initialize_node()
     destination = random_position();
     distance = calc_distance();
     range = calc_range();
-    //Function to print initialized values to OLED display
-    //print_to_OLED_load(load);
-    //print_to_OLED_battery(battery_level);
-    Serial.println("Load in init node: " + load); // Alicia testing delete
-    Serial.println("Battery in init node: " + int(battery_level)); // Alicia testing delete
+
+    //Function to print ID value to OLED display once
+    print_to_OLED_ID(id); 
 }
 
 void initialize_charging_stations()
@@ -252,14 +248,14 @@ position nearest_charging_station()
 
 void print_info()
 {
-    //Serial.println("current position x: " + String(current_position.x) + "  y: " + String(current_position.y));
-    //Serial.println("destination  x: " + String(destination.x) + "  y: " + String(destination.y));
+    Serial.println("current position x: " + String(current_position.x) + "  y: " + String(current_position.y));
+    Serial.println("destination  x: " + String(destination.x) + "  y: " + String(destination.y));
     Serial.println("battery-level: " + String(battery_level));
     Serial.println("load: " + String(load));
-    //Serial.println("battery-consumption: " + String(battery_consumption));
-    //Serial.println("range: " + String(range));
-    //Serial.println("distance: " + String(distance));
-    //Serial.println("nearest station x: " + String(nearest_charging_station().x) + "  y: " + String(nearest_charging_station().y));
+    Serial.println("battery-consumption: " + String(battery_consumption));
+    Serial.println("range: " + String(range));
+    Serial.println("distance: " + String(distance));
+    Serial.println("nearest station x: " + String(nearest_charging_station().x) + "  y: " + String(nearest_charging_station().y));
     Serial.println("----------------------------------------------");
     // Serial.println("load: " + String(load) + " kg");
 }
@@ -305,38 +301,78 @@ void setNodeList(std::list<u_int32_t> newList)
     nodeListState = newList;
 }
 
-void print_to_OLED_load(int value) {
-  // x, y width, height, color 
-  oled.fillRect(60, 37, 40, 10, BLACK);
+void update_OLED(){
+    if(current_state == queuing){
+        print_to_OLED_battery(place_in_queue);
+    }
+    else {
+        print_not_in_queue_OLED();
+        print_to_OLED_range(range);
+        print_to_OLED_dist(distance);
+        print_to_OLED_consumption(battery_consumption);
+        print_to_OLED_battery(battery_level);
+    }
+}
+
+/* 
+All print to OLED methods below starts with clearing the display 
+from the old value with the function fillRect(x, y width, height, color ). 
+Then the new values prints on the specific coordinates.
+ */
+void print_to_OLED_queue(int value){
+  oled.fillRect(44, 17, 15, 10, BLACK); 
   oled.setTextSize(1);
   oled.setTextColor(WHITE);
-  oled.setCursor(60,37);
+  oled.setCursor(44,17);
+  oled.println(value);
+  oled.display();     
+}
+void print_to_OLED_ID(int value){
+  oled.setTextSize(1);
+  oled.setTextColor(WHITE);
+  oled.setCursor(76,17);
+  oled.println(value);
+  oled.display();     
+}
+void print_to_OLED_range(int value) {
+  oled.fillRect(69, 27, 40, 10, BLACK);
+  oled.setTextSize(1);
+  oled.setTextColor(WHITE);
+  oled.setCursor(69,27);
   oled.println(value);
   oled.display();
 }
-
-void print_to_OLED_battery(float value){
-  // x, y width, height, color 
-  oled.fillRect(32, 57, 18, 10, BLACK);
+void print_to_OLED_dist(int value) {
+  oled.fillRect(69, 37, 40, 10, BLACK);
   oled.setTextSize(1);
   oled.setTextColor(WHITE);
-  oled.setCursor(32,57);
+  oled.setCursor(69,37);
+  oled.println(value);
+  oled.display();
+}
+void print_to_OLED_consumption(float value) { 
+  oled.fillRect(69, 47, 40, 10, BLACK);
+  oled.setTextSize(1);
+  oled.setTextColor(WHITE);
+  oled.setCursor(69,47);
+  oled.println(value);
+  oled.display();
+}
+void print_to_OLED_battery(float value){
+  oled.fillRect(65, 57, 15, 10, BLACK);
+  oled.setTextSize(1);
+  oled.setTextColor(WHITE);
+  oled.setCursor(65,57);
   oled.println(int(value));
   oled.display();    
 }
 
-void print_to_OLED_queue(int value){
-  // x, y width, height, color 
-  oled.fillRect(67, 27, 15, 10, BLACK); 
-  oled.setTextSize(1);
-  oled.setTextColor(WHITE);
-  oled.setCursor(67,27);
-  oled.println(value);
-  oled.display();     
-}
-
+/*
+This method is called when a node is not at a charging station 
+to remove its queue value from display. No value is set, display 
+is only cleared.
+*/
 void print_not_in_queue_OLED(){
-  // x, y width, height, color 
-  oled.fillRect(67, 27, 15, 10, BLACK); 
+  oled.fillRect(44, 17, 15, 10, BLACK); 
   oled.display();     
 }

@@ -348,7 +348,7 @@ void stateCheck()
 void setup()
 {
   Serial.begin(115200);
-  
+  /*
   Serial.println("statemachine init");
   mesh.setDebugMsgTypes(ERROR | STARTUP); // set before init() so that you can see startup messages
   meshInit(ZONE_A_ID, MESH_PASSWORD, MESH_PORT);
@@ -369,7 +369,7 @@ void setup()
   userScheduler.addTask(taskSendBroadcast);
 
   Serial.println("init complete");
-
+*/
  //Setup part for OLED display
 
 // initialize OLED display with address 0x3C for 128x64
@@ -409,6 +409,6 @@ void loop()
 {
   //delay(2000);
   //mesh.update();
-  //update_state();
-
+  update_state();
+  
 }
