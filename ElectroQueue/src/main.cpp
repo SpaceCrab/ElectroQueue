@@ -289,13 +289,6 @@ void enterZone(String zoneID)
     networkstate = true;
 
     nodeList = mesh.getNodeList();
-
-    // Serial.println("broadcasting request to charge");
-    if (nodeList.empty())
-    { // checks if the network has any other nodes in it
-      Serial.println("broadcasting request to charge");
-      taskSendMessage.enable();
-    }
   }
 }
 
@@ -354,6 +347,7 @@ void stateCheck()
     break;
   default:
         exitZone();
+    enterZone("Default");
 
     break;
   }
