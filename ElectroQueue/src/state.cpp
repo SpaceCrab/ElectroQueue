@@ -77,10 +77,8 @@ state update_state()
 
     case charging:
         Serial.println("In state: charging");
-        if(charging_complete){
-            next_state = move_to_destination;
-            charging_complete = false;
-        }
+
+        next_state = handle_charging();
         break;
     }
     current_state = next_state;
@@ -123,8 +121,22 @@ state handle_move_charging_station()
         return move_to_charging_station;
     }
 }
+state handle_charging()
+{
+    battery_level += battery_consumption;
+    if (battery_level < MAX_BATTERY_LEVEL)
+    {
+        return charging;
+    }
+    else
+    {
+        battery_level = 100;
+        return move_to_destination;
+    }
+}
 
-void initialize_node(int id)
+void initialize_node()
+
 {
     load = std::rand() % MAX_LOAD + 1;
     battery_level = std::rand() % (MAX_BATTERY_LEVEL + 1);
@@ -178,6 +190,8 @@ float calc_prio()
     {
         priority += ((distance - range) / distance + factor_range) * 2;
     }
+
+    // Wait-time priority calculation ?
 
     return priority;
 }
