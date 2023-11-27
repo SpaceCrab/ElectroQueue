@@ -21,6 +21,10 @@ int wait_count;
 float priority;
 int id;
 int place_in_queue;
+bool broadcast_complete = false;
+bool charging_complete = false;
+
+bool first_in_queue = false;
 position current_position;
 position destination;
 position charging_stations[NR_OF_CS];
@@ -37,6 +41,11 @@ void set_state(state state)
 
 state update_state()
 {
+    Serial.println("current position");
+    Serial.print(current_position.x);
+    Serial.print(current_position.y);
+    Serial.println(" ");
+    
     switch (current_state)
     {
     case assign_new_destination:
@@ -57,17 +66,25 @@ state update_state()
 
     case connect_and_broadcast:
         Serial.println("In state: connect and broadcast");
-        next_state = queuing;
+        if(broadcast_complete){
+            next_state = queuing;
+            broadcast_complete = false;
+        }
+        
         break;
 
     case queuing:
         Serial.println("In state: queuing");
-        next_state = charging;
+        if(first_in_queue){
+            next_state = charging;
+            first_in_queue = false;
+        }
         break;
 
     case charging:
         Serial.println("In state: charging");
-        next_state = move_to_destination;
+
+        next_state = handle_charging();
         break;
     }
     current_state = next_state;
@@ -111,8 +128,22 @@ state handle_move_charging_station()
         return move_to_charging_station;
     }
 }
+state handle_charging()
+{
+    battery_level += battery_consumption;
+    if (battery_level < MAX_BATTERY_LEVEL)
+    {
+        return charging;
+    }
+    else
+    {
+        battery_level = 100;
+        return move_to_destination;
+    }
+}
 
 void initialize_node()
+
 {
     // Seed the random number generator with the current time
     //std::srand(std::time(nullptr));
@@ -172,6 +203,8 @@ float calc_prio()
     {
         priority += ((distance - range) / distance + factor_range) * 2;
     }
+
+    // Wait-time priority calculation ?
 
     return priority;
 }
@@ -375,4 +408,19 @@ is only cleared.
 void print_not_in_queue_OLED(){
   oled.fillRect(44, 17, 15, 10, BLACK); 
   oled.display();     
+
+void broadcastComplete(){
+    broadcast_complete = true;
+}
+void chargingComplete(){
+    charging_complete = true;
+}
+
+void connecting(){
+    broadcast_complete = false;
+}
+
+void ready_to_charge(bool ready){
+    first_in_queue = ready;
+
 }

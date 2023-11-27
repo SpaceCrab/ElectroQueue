@@ -42,6 +42,7 @@ int queuePos = 0;
 
 String currentMsg;
 u_int32_t currentTarget;
+String zoneId;
 
 state currentState = move_to_destination;
 
@@ -128,6 +129,23 @@ void updateOrAddNodeID(uint32_t targetNodeID, bool newHigherValue)
   responseList.push_back({targetNodeID, newHigherValue});
 }
 
+//returns nr of nodes with a higher priority
+int qeueuValue(){
+  int val = 0;
+  for(auto &resp : responseList){
+    if(!resp.higher) val++;
+  }
+  return val;
+}
+
+// returns true if no other node has a higher priority in the queue
+bool allResponseTrue(){
+  for(auto &resp: responseList){
+    if(!resp.higher) return false;
+  }
+  return true;
+}
+
 void printNodeList()
 {
   Serial.println("nodelist:");
@@ -143,10 +161,10 @@ void printNodeList()
 }
 void printResponseList()
 {
+  Serial.print("ResponseList");
   // Iterate through the list and print each element
   for (const auto &resp : responseList)
   {
-    Serial.print("ResponseList");
     Serial.println("NodeID: ");
     Serial.print(resp.nodeID);
     Serial.print(", Higher: ");
@@ -200,7 +218,6 @@ void receivedCallback(uint32_t from, String &msg)
   /*when the recieved msg is a response: store the response in the responselist
    */
   else if (msg.startsWith(SINGLE_PREFIX))
-    ;
   {
     bool response = false;
     if (msg.endsWith("TRUE"))
@@ -255,16 +272,15 @@ bool nodesInNetwork()
 {
   nodeList = mesh.getNodeList();
   if (nodeList.empty())
-    return true;
-  else
     return false;
+  else
+    return true;
 }
 
 void exitZone()
 {
   if (networkstate)
   {
-    taskSendMessage.disable();
     mesh.stop();
     networkstate = false;
     Serial.println("left network");
@@ -283,13 +299,6 @@ void enterZone(String zoneID)
     networkstate = true;
 
     nodeList = mesh.getNodeList();
-
-    // Serial.println("broadcasting request to charge");
-    if (nodeList.empty())
-    { // checks if the network has any other nodes in it
-      Serial.println("broadcasting request to charge");
-      taskSendMessage.enable();
-    }
   }
 }
 
@@ -310,36 +319,47 @@ void sendMessage()
 void stateCheck()
 {
   Serial.println("checking state");
-  String zoneId;
+  compareList();
   currentState = update_state();
   Serial.println(currentState);
-  // printResponseList();
-  // printNodeList();
+  printResponseList();
+  printNodeList();
 
   switch (currentState)
   {
   case connect_and_broadcast:
     // returns a struct -> position = {x,y}
-    //zoneId = get_curr_pos();
-
+    interface-added-to-state
+    zoneId = get_curr_pos().x;
+    zoneId += get_curr_pos().y;
+    Serial.println("zone id");
+    Serial.println(zoneId);
+    
+    connecting();
+    state-and-priority-task-scheduler-fix
     enterZone(zoneId);
     if (!nodeList.empty())
     {
-      currentMsg = "BROADCAST,10"; // replace with real score from state machine
+      String prio = String(calc_prio());
+      currentMsg = "BROADCAST," + prio; // replace with real score from state machine
       taskSendBroadcast.setIterations(4);
       taskSendBroadcast.enable();
-      //set_state(queuing); // test code REMOVE!!!!!!!
+      broadcastComplete();
     }
     else
       Serial.println("no other nodes");
-    break;
-  case charging:
+      //broadcastComplete();
+
     break;
   case queuing:
-    enterZone(zoneId);
-    compareList();
+    ready_to_charge(allResponseTrue());
+    break;
+  case charging:
+    chargingComplete();
     break;
   default:
+    enterZone("Default");
+
     break;
   }
 }
@@ -348,18 +368,18 @@ void stateCheck()
 void setup()
 {
   Serial.begin(115200);
-  /*
+
+  initialize_charging_stations();
   Serial.println("statemachine init");
   mesh.setDebugMsgTypes(ERROR | STARTUP); // set before init() so that you can see startup messages
   meshInit(ZONE_A_ID, MESH_PASSWORD, MESH_PORT);
+  networkstate = true;
 
-  Serial.println("creating scheduler tasks ");
-  Serial.println("taskSendmessage");
-  userScheduler.addTask(taskSendMessage);
+  initialize_node(mesh.getNodeId());
 
   Serial.println("adding tasks");
   userScheduler.addTask(taskStateCheck);
-  taskStateCheck.setInterval(100);
+  taskStateCheck.setInterval(500);
   Serial.println("statemachine enable");
   taskStateCheck.enable();
   Serial.println("init done");
@@ -369,7 +389,6 @@ void setup()
   userScheduler.addTask(taskSendBroadcast);
 
   Serial.println("init complete");
-*/
  //Setup part for OLED display
 
 // initialize OLED display with address 0x3C for 128x64
@@ -402,6 +421,9 @@ void setup()
   // Must be here to work with OLED
   initialize_node();
   initialize_charging_stations();
+
+
+  exitZone();
 
 }
 
