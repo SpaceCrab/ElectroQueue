@@ -39,12 +39,6 @@ String zoneId;
 
 state currentState = move_to_destination;
 
-struct response
-{
-  u_int32_t nodeID;
-  bool higher;
-};
-
 std::list<response> responseList;
 std::list<u_int32_t> nodeList;
 std::list<u_int32_t>::iterator nodeListIt;
@@ -175,6 +169,7 @@ void exitZone()
   if (networkstate)
   {
     mesh.stop();
+    nodeList = mesh.getNodeList();
     networkstate = false;
     Serial.println("left network");
   }

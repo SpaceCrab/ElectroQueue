@@ -39,7 +39,7 @@ void compareList(std::list<u_int32_t>& nodeList, std::list<response>& responseLi
   } // test
 }
 
-void updateOrAddNodeID(uint32_t targetNodeID, bool newHigherValue, std::list<response>& responseList)
+void updateOrAddNodeId(uint32_t targetNodeID, bool newHigherValue, std::list<response>& responseList)
 {
   for (auto &resp : responseList)
   {
