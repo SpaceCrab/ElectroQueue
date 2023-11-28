@@ -10,7 +10,7 @@
 #include <string>
 #include <iostream>
 
-#include "state.h"
+#include "state.hpp"
 
 // Includes for OLED display
 #include <Wire.h>
