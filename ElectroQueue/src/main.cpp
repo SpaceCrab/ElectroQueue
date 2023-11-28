@@ -1,16 +1,9 @@
-//************************************************************
-// this is a simple example that uses the painlessMesh library
-//
-// 1. sends a silly message to every node on the mesh at a random time between 1 and 5 seconds
-// 2. prints anything it receives to Serial.print
-//
-//
-//************************************************************
 #include "painlessMesh.h"
 #include <string>
 #include <iostream>
 
 #include "state.hpp"
+#include "utils.hpp"
 
 // Includes for OLED display
 #include <Wire.h>
@@ -75,106 +68,6 @@ Task taskStateCheck(TASK_SECOND * 1, TASK_FOREVER, &stateCheck);
 Task taskSendBroadcast(TASK_SECOND * 1, TASK_FOREVER, &sendBroadcast);
 Task taskSendSingle(TASK_SECOND * 1, TASK_FOREVER, &sendSingleMsg);
 
-void addToList(u_int32_t nodeID, bool higherScore)
-{
-  // add a node and its response to the responseList
-  struct response newResponse;
-
-  newResponse.higher = higherScore;
-  newResponse.nodeID = nodeID;
-
-  std::list<response>::iterator responseListIt = responseList.begin();
-  responseList.insert(responseListIt, newResponse);
-}
-
-void removeFromList(u_int32_t id)
-{
-  // remove a node and its response from the response list
-  std::list<response>::iterator responseListIt;
-  for (responseListIt = responseList.begin(); responseListIt != responseList.end(); ++responseListIt)
-  {
-    if (responseListIt->nodeID == id)
-      responseList.erase(responseListIt);
-  }
-}
-
-void compareList()
-{
-  nodeList = mesh.getNodeList();
-  for (auto it = responseList.begin(); it != responseList.end();)
-  {
-    if (!std::count(nodeList.begin(), nodeList.end(), it->nodeID))
-    {
-      it = responseList.erase(it); // removes nodes not connected to the network
-    }
-    else
-    {
-      it++;
-    }
-  } // test
-}
-
-void updateOrAddNodeID(uint32_t targetNodeID, bool newHigherValue)
-{
-  for (auto &resp : responseList)
-  {
-    if (resp.nodeID == targetNodeID)
-    {
-      resp.higher = newHigherValue; // Update the boolean value
-      return;                       // Exit the function once the update is done
-    }
-  }
-
-  // If the nodeID is not found, add a new element to the list
-  responseList.push_back({targetNodeID, newHigherValue});
-}
-
-//returns nr of nodes with a higher priority
-int qeueuValue(){
-  int val = 0;
-  for(auto &resp : responseList){
-    if(!resp.higher) val++;
-  }
-  return val;
-}
-
-// returns true if no other node has a higher priority in the queue
-bool allResponseTrue(){
-  for(auto &resp: responseList){
-    if(!resp.higher) return false;
-  }
-  return true;
-}
-
-void printNodeList()
-{
-  Serial.println("nodelist:");
-  // Iterate through the list and print each element
-  for (const auto &nod : nodeList)
-  {
-    Serial.print("NodeID: ");
-    Serial.println(nod);
-  }
-
-  // Add a separator for better readability
-  Serial.println("------");
-}
-void printResponseList()
-{
-  Serial.print("ResponseList");
-  // Iterate through the list and print each element
-  for (const auto &resp : responseList)
-  {
-    Serial.println("NodeID: ");
-    Serial.print(resp.nodeID);
-    Serial.print(", Higher: ");
-    Serial.println(resp.higher);
-  }
-
-  // Add a separator for better readability
-  Serial.println("------");
-}
-
 void receivedCallback(uint32_t from, String &msg)
 {
   Serial.printf("startHere: Received from %u msg=%s\n", from, msg.c_str());
@@ -202,7 +95,7 @@ void receivedCallback(uint32_t from, String &msg)
         currentTarget = from;
         taskSendSingle.setIterations(3);
         taskSendSingle.enable();
-        updateOrAddNodeID(from, true);
+        updateOrAddNodeId(from, true, responseList);
       } // send response with false;
 
       if (ownScore < otherScore)
@@ -211,7 +104,7 @@ void receivedCallback(uint32_t from, String &msg)
         currentTarget = from;
         taskSendSingle.setIterations(3);
         taskSendSingle.enable();
-        updateOrAddNodeID(from, false);
+        updateOrAddNodeId(from, false, responseList);
       } // send response with true;
     }
   }
@@ -222,7 +115,7 @@ void receivedCallback(uint32_t from, String &msg)
     bool response = false;
     if (msg.endsWith("TRUE"))
       response = true;
-    updateOrAddNodeID(from, response);
+    updateOrAddNodeId(from, response, responseList);
   }
 }
 
@@ -316,11 +209,11 @@ void sendMessage()
 void stateCheck()
 {
   Serial.println("checking state");
-  compareList();
+  compareList(nodeList, responseList);
   currentState = update_state();
   Serial.println(currentState);
-  printResponseList();
-  printNodeList();
+  printResponseList(responseList);
+  printNodeList(nodeList);
 
   switch (currentState)
   {
@@ -347,7 +240,7 @@ void stateCheck()
 
     break;
   case queuing:
-    ready_to_charge(allResponseTrue());
+    ready_to_charge(allResponseTrue(responseList));
     break;
   case charging:
     break;

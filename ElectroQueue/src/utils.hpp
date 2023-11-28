@@ -12,7 +12,7 @@ struct response
 
 void addToList(u_int32_t nodeID, bool higherScore, std::list<response>& responseList);
 void removeFromList(u_int32_t id, std::list<response>& responseList);
-void comparelist(std::list<u_int32_t>& nodeList, std::list<response>& responseList);
+void compareList(std::list<u_int32_t>& nodeList, std::list<response>& responseList);
 void updateOrAddNodeId(u_int32_t targetNodeId, bool newHigherValue, std::list<response>& responseList);
 int queueValue(std::list<response>& responseList);
 bool allResponseTrue(std::list<response>& responseList);
