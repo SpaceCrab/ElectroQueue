@@ -145,9 +145,6 @@ state handle_charging()
 void initialize_node()
 
 {
-    // Seed the random number generator with the current time
-    //std::srand(std::time(nullptr));
-
     load = random(1, MAX_LOAD + 1);
     battery_level = random(MAX_BATTERY_LEVEL + 1);
     battery_consumption = calc_battery_consumption();
@@ -164,8 +161,6 @@ void initialize_charging_stations()
 {
     position cs = {8, 3};
     charging_stations[0] = cs;
-    cs = {3, 8};
-    charging_stations[1] = cs;
 }
 
 float calc_prio()
@@ -334,6 +329,13 @@ void setNodeList(std::list<u_int32_t> newList)
     nodeListState = newList;
 }
 
+void set_place_in_queue(int pos){
+    place_in_queue = pos;
+}
+
+void set_id(int nodeId){
+    id = nodeId;
+}
 void update_OLED(){
     if(current_state == queuing){
         print_to_OLED_battery(place_in_queue);
@@ -392,7 +394,7 @@ void print_to_OLED_consumption(float value) {
   oled.display();
 }
 void print_to_OLED_battery(float value){
-  oled.fillRect(65, 57, 15, 10, BLACK);
+  oled.fillRect(65, 57, 20, 10, BLACK);
   oled.setTextSize(1);
   oled.setTextColor(WHITE);
   oled.setCursor(65,57);

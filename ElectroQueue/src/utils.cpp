@@ -55,7 +55,7 @@ void updateOrAddNodeId(uint32_t targetNodeID, bool newHigherValue, std::list<res
 }
 
 //returns nr of nodes with a higher priority
-int qeueuValue(std::list<response>& responseList){
+int queueValue(std::list<response>& responseList){
   int val = 0;
   for(auto &resp : responseList){
     if(!resp.higher) val++;

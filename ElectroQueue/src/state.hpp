@@ -9,7 +9,7 @@
 #define MAX_LOAD 20000
 #define MIN_BATTERY_CONSUMPTION 0.3
 #define MAX_BATTERY_LEVEL 100
-#define NR_OF_CS 2
+#define NR_OF_CS 1
 
 struct position
 {
@@ -49,10 +49,10 @@ void setNodeList(std::list<u_int32_t> nodeList);
 void set_state(state state);
 void broadcastComplete();
 void chargingComplete();
-
+void set_place_in_queue(int pos);
 void connecting();
 void ready_to_charge(bool queue_empty);
-
+void set_id(int nodeId);
 /*getters*/
 
 position get_curr_pos();

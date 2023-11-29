@@ -236,6 +236,7 @@ void stateCheck()
     break;
   case queuing:
     ready_to_charge(allResponseTrue(responseList));
+    set_place_in_queue(queueValue(responseList));
     break;
   case charging:
     break;
@@ -251,6 +252,7 @@ void setup()
 {
   Serial.begin(115200);
 
+  randomSeed(analogRead(2));
  //Setup part for OLED display
 
 // initialize OLED display with address 0x3C for 128x64
@@ -289,7 +291,7 @@ void setup()
 
   Serial.println("adding tasks");
   userScheduler.addTask(taskStateCheck);
-  taskStateCheck.setInterval(500);
+  taskStateCheck.setInterval(900);
   Serial.println("statemachine enable");
   taskStateCheck.enable();
   Serial.println("init done");
@@ -304,7 +306,7 @@ void setup()
   // Must be here to work with OLED
   initialize_node();
   initialize_charging_stations();
-
+  set_id(mesh.getNodeId());
 
   exitZone();
 
