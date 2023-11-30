@@ -71,6 +71,7 @@ int queueValue(std::list<response>& responseList){
 
 // returns true if no other node has a higher priority in the queue
 bool allResponseTrue(std::list<response>& responseList){
+  
   for(auto &resp: responseList){
     if(!resp.higher) return false;
   }

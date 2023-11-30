@@ -18,5 +18,4 @@ int queueValue(std::list<response>& responseList);
 bool allResponseTrue(std::list<response>& responseList);
 void printResponseList(std::list<response>& responseList);
 void printNodeList(std::list<u_int32_t>& nodeList);
-
 #endif

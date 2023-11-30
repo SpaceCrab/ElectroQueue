@@ -91,6 +91,7 @@ void newConnectionCallback(uint32_t nodeId)
 void changedConnectionCallback()
 {
   Serial.printf("Changed connections\n");
+  nodeList = mesh.getNodeList();
 }
 
 void nodeTimeAdjustedCallback(int32_t offset)
@@ -227,9 +228,12 @@ void enterZone(String zoneID)
 void stateCheck()
 {
   set_id(mesh.getNodeId());
+  nodeList = mesh.getNodeList();
   Serial.println("checking state");
   currentState = update_state();
   Serial.println(currentState);
+
+  compareList(nodeList, responseList); // cull disconnected nodes
 
   String currPos = String(get_curr_pos().x);
   currPos += String(get_curr_pos().y);
@@ -239,9 +243,7 @@ void stateCheck()
   
   int prio = get_prio_score();
   String broadcast = BROADCAST_PREFIX;
-  Serial.println(broadcast);
   broadcast += "," + String(prio) + "," + currPos;
-  Serial.printf("broadcast after mod: %s", broadcast);
 
   switch (currentState)
   {
@@ -251,13 +253,15 @@ void stateCheck()
       createBroadcastMessage(3,broadcast);
 
       taskHandleOutgoing.enable();
-      TaskHandleIncoming.enable();
-
-      broadcastComplete();
+      if(outgoingBuff.empty()) broadcastComplete();
     }
     break;
   case queuing:
-    ready_to_charge(allResponseTrue(responseList));
+    TaskHandleIncoming.enable();
+    if(incomingBuff.empty()){
+      ready_to_charge(allResponseTrue(responseList));
+    }
+    createBroadcastMessage(3,broadcast);
     set_place_in_queue(queueValue(responseList));
     Serial.printf("Place in queue %u", queueValue(responseList));
     break;
@@ -265,6 +269,7 @@ void stateCheck()
     break;
   default:
     if(currentZoneId != NOT_A_ZONE){
+      responseList.clear();
       createExitMessage(1);
       exitZone();
     }
