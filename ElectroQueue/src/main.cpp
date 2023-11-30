@@ -20,8 +20,10 @@
 #define ZONE_B_x 5
 #define ZONE_A_ID "zone A"
 #define ZONE_B_ID "zone B"
+#define NOT_A_ZONE "NOT A ZONE"
 #define BROADCAST_PREFIX "BROADCAST"
 #define SINGLE_PREFIX "SINGLE"
+#define EXIT_PREFIX "EXIT"
 // defines for OLED display
 #define SCREEN_WIDTH 128 
 #define SCREEN_HEIGHT 64
@@ -33,9 +35,19 @@ int posY = 0;
 int posX = 0;
 int queuePos = 0;
 
+struct message
+{
+  String msg;
+  int id;
+};
+
 String currentMsg;
+String currentBroadcast;
 u_int32_t currentTarget;
-String zoneId;
+String currentZoneId;
+
+std::list<message> incomingBuff;
+std::list<message> outgoingBuff;
 
 state currentState = move_to_destination;
 
@@ -52,82 +64,131 @@ uint32_t testMessagesSent = 0;
 Scheduler userScheduler; // to control your personal task
 painlessMesh mesh;
 
-void sendMessage(); // Prototype so PlatformIO doesn't complain
-void sendBroadcast();
-void sendSingleMsg();
 void stateCheck();
+void handleIncoming();
+void handleOutgoing();
 
-Task taskSendMessage(TASK_SECOND * 1, TASK_FOREVER, &sendMessage);
 Task taskStateCheck(TASK_SECOND * 1, TASK_FOREVER, &stateCheck);
-Task taskSendBroadcast(TASK_SECOND * 1, TASK_FOREVER, &sendBroadcast);
-Task taskSendSingle(TASK_SECOND * 1, TASK_FOREVER, &sendSingleMsg);
+Task taskHandleOutgoing(TASK_SECOND * 1, TASK_FOREVER, &handleOutgoing);
+Task TaskHandleIncoming(TASK_SECOND * 1, TASK_FOREVER, &handleIncoming);
+
 
 void receivedCallback(uint32_t from, String &msg)
 {
   Serial.printf("startHere: Received from %u msg=%s\n", from, msg.c_str());
-  /*when the recieved msg is a broadcast with prio score, compare the score.
-      if the score is lower than the own score: respond with false and add it to the responselist
-      if the score is higher than the own score: respond with true and add it to the responselist
-  */
-  if (currentState != queuing)
-    return;
-  if (msg.startsWith(BROADCAST_PREFIX))
-  {
-    Serial.println("Broadcast message recieved");
-    float ownScore = calc_prio();
-    char delimiter = ',';
-
-    int pos = msg.indexOf(delimiter);
-    if (pos != -1)
-    {
-      String scoreStr = msg.substring(pos + 1);
-      int otherScore = scoreStr.toInt();
-
-      if (ownScore > otherScore)
-      {
-        currentMsg = "SINGLE,FALSE";
-        currentTarget = from;
-        taskSendSingle.setIterations(3);
-        taskSendSingle.enable();
-        updateOrAddNodeId(from, true, responseList);
-      } // send response with false;
-
-      if (ownScore < otherScore)
-      {
-        currentMsg = "SINGLE,TRUE";
-        currentTarget = from;
-        taskSendSingle.setIterations(3);
-        taskSendSingle.enable();
-        updateOrAddNodeId(from, false, responseList);
-      } // send response with true;
-    }
-  }
-  /*when the recieved msg is a response: store the response in the responselist
-   */
-  else if (msg.startsWith(SINGLE_PREFIX))
-  {
-    bool response = false;
-    if (msg.endsWith("TRUE"))
-      response = true;
-    updateOrAddNodeId(from, response, responseList);
-  }
+  message incoming;
+  incoming.id = from;
+  incoming.msg = msg;
+  incomingBuff.push_back(incoming);
 }
 
 void newConnectionCallback(uint32_t nodeId)
 {
   Serial.printf("--> startHere: New Connection, nodeId = %u\n", nodeId);
+  nodeList = mesh.getNodeList();
 }
 
 void changedConnectionCallback()
 {
   Serial.printf("Changed connections\n");
-  nodeList = mesh.getNodeList();
-  setNodeList(nodeList);
 }
 
 void nodeTimeAdjustedCallback(int32_t offset)
 {
   Serial.printf("Adjusted time %u. Offset = %d\n", mesh.getNodeTime(), offset);
+}
+
+void handleIncoming(){
+  if(!incomingBuff.empty()){
+    message incoming = incomingBuff.front();
+    incomingBuff.pop_front();
+    
+    float ownScore = calc_prio();
+    char delimiter = ',';
+    int pos = incoming.msg.indexOf(delimiter);
+    String scoreStr = incoming.msg.substring(pos + 1);
+
+    String prefix = incoming.msg.substring(0,pos);
+
+    // incoming message is a broadcast, create a response and push it to the outgoing buffer
+    // add the node to own responselist, if the score is higher than own as false if lower as true
+    if (prefix == BROADCAST_PREFIX && incoming.msg.endsWith(currentZoneId))
+    {
+      if (pos != -1)
+      {
+        message outgoing;
+        outgoing.id = incoming.id;
+
+        float otherScore = scoreStr.toFloat();
+
+        if (ownScore > otherScore)
+        {
+          outgoing.msg = "SINGLE,FALSE";
+          outgoing.msg += currentZoneId;
+          updateOrAddNodeId(incoming.id, true, responseList);
+        } 
+        if (ownScore < otherScore)
+        {
+          outgoing.msg = "SINGLE,TRUE";
+          outgoing.msg += currentZoneId;
+          updateOrAddNodeId(incoming.id, false, responseList);
+        } 
+        outgoingBuff.push_back(outgoing);
+      }
+    }
+    //the incoming message is a response, add it to the responselist
+    else if (prefix == SINGLE_PREFIX && incoming.msg.endsWith(currentZoneId))
+    {
+      bool response = false;
+      if (incoming.msg.endsWith("TRUE"))
+        response = true;
+      updateOrAddNodeId(incoming.id, response, responseList);
+    }
+    //the incoming message is a broadcast from a node leaving the zone 
+    else if (prefix == EXIT_PREFIX && incoming.msg.endsWith(currentZoneId)){
+      removeFromList(incoming.id, responseList);
+    }
+     
+  }
+  TaskHandleIncoming.setInterval(random(1,50));
+}
+
+void handleOutgoing(){
+  if(outgoingBuff.empty()) return;
+
+  message outgoing = outgoingBuff.front();
+  outgoingBuff.pop_front();
+
+  Serial.println(outgoing.msg);
+  if(outgoing.msg.startsWith(BROADCAST_PREFIX)||outgoing.msg.startsWith(EXIT_PREFIX)){
+    mesh.sendBroadcast(outgoing.msg);
+  }
+  else if(outgoing.msg.startsWith(SINGLE_PREFIX)){
+    mesh.sendSingle(outgoing.id,outgoing.msg);
+  }
+  else Serial.println("faulty message in outgoing buffer");
+  taskHandleOutgoing.setInterval(random(1,50));
+}
+
+void createBroadcastMessage(int repetitions, String msg){
+  message outgoingBroadcast;
+  outgoingBroadcast.id = mesh.getNodeId();
+  outgoingBroadcast.msg = msg;
+
+  for(int i = 0; i < repetitions; i++){
+    outgoingBuff.push_back(outgoingBroadcast);
+  }
+}
+
+void createExitMessage(int repetitions){
+  message outgoingExit;
+  outgoingExit.id = mesh.getNodeId();
+  String message = String(EXIT_PREFIX) + "," + String(currentZoneId);
+  outgoingExit.msg = message;
+
+  for(int i = 0; i < repetitions; i++){
+    outgoingBuff.push_back(outgoingExit);
+  }
 }
 
 void meshInit(String prefix, String password, int port)
@@ -142,18 +203,6 @@ void meshInit(String prefix, String password, int port)
     mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
   }
 }
-// User stub
-
-void sendBroadcast()
-{
-  mesh.sendBroadcast(currentMsg);
-  Serial.println("sent broadcast message");
-}
-
-void sendSingleMsg()
-{
-  mesh.sendSingle(currentTarget, currentMsg);
-}
 
 bool nodesInNetwork()
 {
@@ -166,83 +215,60 @@ bool nodesInNetwork()
 
 void exitZone()
 {
-  if (networkstate)
-  {
-    mesh.stop();
-    nodeList = mesh.getNodeList();
-    networkstate = false;
-    Serial.println("left network");
-  }
+  currentZoneId = NOT_A_ZONE;
 }
 
 void enterZone(String zoneID)
 {
-  if (!networkstate)
-  {
-    Serial.println("entered zone ");
-    Serial.println(zoneID);
-
-    Serial.println("starting network.....");
-    meshInit(zoneID, MESH_PASSWORD, MESH_PORT);
-    networkstate = true;
-  }
-}
-
-void sendMessage()
-{
-  String msg = "Hello from node ";
-  msg += mesh.getNodeId();
-  mesh.sendBroadcast(msg);
-  testMessagesSent++;
-  Serial.println("sent message");
-
-  // test code
-
-  taskSendMessage.setInterval(random(TASK_SECOND * 1, TASK_SECOND * 5));
+  currentZoneId = zoneID;
+  Serial.printf("entered zone %s", currentZoneId);
 }
 
 void stateCheck()
 {
+  set_id(mesh.getNodeId());
   Serial.println("checking state");
-  compareList(nodeList, responseList);
   currentState = update_state();
   Serial.println(currentState);
+
+  String currPos = String(get_curr_pos().x);
+  currPos += String(get_curr_pos().y);
+
   printResponseList(responseList);
   printNodeList(nodeList);
+  
+  int prio = get_prio_score();
+  String broadcast = BROADCAST_PREFIX;
+  Serial.println(broadcast);
+  broadcast += "," + String(prio) + "," + currPos;
+  Serial.printf("broadcast after mod: %s", broadcast);
 
   switch (currentState)
   {
   case connect_and_broadcast:
-    // returns a struct -> position = {x,y}
-    zoneId = get_curr_pos().x;
-    zoneId += get_curr_pos().y;
-    Serial.println("zone id");
-    Serial.println(zoneId);
-    
-    connecting();
-    enterZone(zoneId);
-    if (!nodeList.empty())
-    {
-      String prio = String(calc_prio());
-      currentMsg = "BROADCAST," + prio; // replace with real score from state machine
-      taskSendBroadcast.setIterations(4);
-      taskSendBroadcast.enable();
+    if(!nodeList.empty()){
+      enterZone(currPos);
+      createBroadcastMessage(3,broadcast);
+
+      taskHandleOutgoing.enable();
+      TaskHandleIncoming.enable();
+
       broadcastComplete();
     }
-    else
-      Serial.println("no other nodes");
-      //broadcastComplete();
-
     break;
   case queuing:
     ready_to_charge(allResponseTrue(responseList));
     set_place_in_queue(queueValue(responseList));
+    Serial.printf("Place in queue %u", queueValue(responseList));
     break;
   case charging:
     break;
   default:
-    exitZone();
-
+    if(currentZoneId != NOT_A_ZONE){
+      createExitMessage(1);
+      exitZone();
+    }
+    TaskHandleIncoming.disable();
     break;
   }
 }
@@ -284,31 +310,27 @@ void setup()
   initialize_charging_stations();
   Serial.println("statemachine init");
   mesh.setDebugMsgTypes(ERROR | STARTUP); // set before init() so that you can see startup messages
-  meshInit(ZONE_A_ID, MESH_PASSWORD, MESH_PORT);
-  networkstate = true;
+  meshInit("ElectroQueue", MESH_PASSWORD, MESH_PORT);
 
-  initialize_node();
-
-  Serial.println("adding tasks");
+  Serial.println("adding state tasks");
   userScheduler.addTask(taskStateCheck);
   taskStateCheck.setInterval(900);
   Serial.println("statemachine enable");
   taskStateCheck.enable();
-  Serial.println("init done");
 
-  userScheduler.addTask(taskSendSingle);
+  Serial.println("Adding comm tasks");
+  userScheduler.addTask(taskHandleOutgoing);
+  userScheduler.addTask(TaskHandleIncoming);
 
-  userScheduler.addTask(taskSendBroadcast);
-
-  Serial.println("init complete");
-
-  
   // Must be here to work with OLED
+  Serial.println("node initializing");
   initialize_node();
   initialize_charging_stations();
   set_id(mesh.getNodeId());
 
   exitZone();
+
+  Serial.println("init done");
 
 }
 

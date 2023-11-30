@@ -60,6 +60,7 @@ int get_id();
 int get_load();
 int get_place_in_queue();
 float get_bat_lev();
+float get_prio_score();
 
 // Print for OLED
 void update_OLED();

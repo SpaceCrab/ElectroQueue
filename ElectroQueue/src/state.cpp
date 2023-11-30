@@ -318,6 +318,9 @@ float get_bat_lev()
 {
     return battery_level;
 }
+float get_prio_score(){
+    return priority;
+}
 
 void set_destination(position dest)
 {

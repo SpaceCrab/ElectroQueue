@@ -15,13 +15,19 @@ void addToList(u_int32_t nodeID, bool higherScore,std::list<response>& responseL
 
 void removeFromList(u_int32_t id, std::list<response>& responseList)
 {
-  // remove a node and its response from the response list
-  std::list<response>::iterator responseListIt;
-  for (responseListIt = responseList.begin(); responseListIt != responseList.end(); ++responseListIt)
-  {
-    if (responseListIt->nodeID == id)
-      responseList.erase(responseListIt);
-  }
+    // remove a node and its response from the response list
+    auto responseListIt = responseList.begin();
+    while (responseListIt != responseList.end())
+    {
+        if (responseListIt->nodeID == id)
+        {
+            responseListIt = responseList.erase(responseListIt);
+        }
+        else
+        {
+            ++responseListIt;
+        }
+    }
 }
 
 void compareList(std::list<u_int32_t>& nodeList, std::list<response>& responseList)
