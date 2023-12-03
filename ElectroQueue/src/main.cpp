@@ -248,20 +248,20 @@ void stateCheck()
   switch (currentState)
   {
   case connect_and_broadcast:
+    TaskHandleIncoming.enableIfNot();
     if(!nodeList.empty()){
       enterZone(currPos);
-      createBroadcastMessage(3,broadcast);
+      createBroadcastMessage(1,broadcast);
+      broadcastComplete();
 
-      taskHandleOutgoing.enable();
-      if(outgoingBuff.empty()) broadcastComplete();
+      //if(outgoingBuff.empty()) broadcastComplete();
     }
     break;
   case queuing:
-    TaskHandleIncoming.enable();
     if(incomingBuff.empty()){
       ready_to_charge(allResponseTrue(responseList));
     }
-    createBroadcastMessage(3,broadcast);
+    createBroadcastMessage(1,broadcast);
     set_place_in_queue(queueValue(responseList));
     Serial.printf("Place in queue %u", queueValue(responseList));
     break;
@@ -319,7 +319,8 @@ void setup()
 
   Serial.println("adding state tasks");
   userScheduler.addTask(taskStateCheck);
-  taskStateCheck.setInterval(900);
+  Serial.println("setting interval");
+  taskStateCheck.setInterval(100);
   Serial.println("statemachine enable");
   taskStateCheck.enable();
 
@@ -327,11 +328,15 @@ void setup()
   userScheduler.addTask(taskHandleOutgoing);
   userScheduler.addTask(TaskHandleIncoming);
 
+  Serial.println("enabling comm tasks");
+  taskHandleOutgoing.enable();
+  TaskHandleIncoming.enable();
+
   // Must be here to work with OLED
   Serial.println("node initializing");
+  set_id(mesh.getNodeId());
   initialize_node();
   initialize_charging_stations();
-  set_id(mesh.getNodeId());
 
   exitZone();
 
