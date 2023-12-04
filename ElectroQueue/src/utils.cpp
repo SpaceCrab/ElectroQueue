@@ -93,7 +93,7 @@ void printNodeList(std::list<u_int32_t>& nodeList)
 }
 void printResponseList(std::list<response>& responseList)
 {
-  Serial.print("ResponseList");
+  Serial.println("ResponseList");
   // Iterate through the list and print each element
   for (const auto &resp : responseList)
   {

@@ -11,19 +11,18 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
-#define MESH_PREFIX "whateverYouLike"
+//mesh network defines 
 #define MESH_PASSWORD "somethingSneaky"
 #define MESH_PORT 5555
-#define ZONE_A_Y 4
-#define ZONE_A_X 4
-#define ZONE_B_Y 5
-#define ZONE_B_x 5
-#define ZONE_A_ID "zone A"
-#define ZONE_B_ID "zone B"
+
+//zone defines 
 #define NOT_A_ZONE "NOT A ZONE"
+
+//message defines
 #define BROADCAST_PREFIX "BROADCAST"
 #define SINGLE_PREFIX "SINGLE"
 #define EXIT_PREFIX "EXIT"
+
 // defines for OLED display
 #define SCREEN_WIDTH 128 
 #define SCREEN_HEIGHT 64
@@ -31,19 +30,12 @@
 // declare an SSD1306 display object connected to I2C
 Adafruit_SSD1306 oled(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1); 
 
-int posY = 0;
-int posX = 0;
-int queuePos = 0;
-
 struct message
 {
   String msg;
   int id;
 };
 
-String currentMsg;
-String currentBroadcast;
-u_int32_t currentTarget;
 String currentZoneId;
 
 std::list<message> incomingBuff;
@@ -55,12 +47,6 @@ std::list<response> responseList;
 std::list<u_int32_t> nodeList;
 std::list<u_int32_t>::iterator nodeListIt;
 
-String prevZoneID;
-
-bool networkstate = false;
-
-uint32_t testMessagesSent = 0;
-
 Scheduler userScheduler; // to control your personal task
 painlessMesh mesh;
 
@@ -71,7 +57,6 @@ void handleOutgoing();
 Task taskStateCheck(TASK_SECOND * 1, TASK_FOREVER, &stateCheck);
 Task taskHandleOutgoing(TASK_SECOND * 1, TASK_FOREVER, &handleOutgoing);
 Task TaskHandleIncoming(TASK_SECOND * 1, TASK_FOREVER, &handleIncoming);
-
 
 void receivedCallback(uint32_t from, String &msg)
 {
@@ -145,7 +130,7 @@ void handleIncoming(){
         response = true;
       updateOrAddNodeId(incoming.id, response, responseList);
     }
-    //the incoming message is a broadcast from a node leaving the zone 
+    //the incoming message is a EXIT broadcast from a node leaving the zone 
     else if (prefix == EXIT_PREFIX && incoming.msg.endsWith(currentZoneId)){
       removeFromList(incoming.id, responseList);
     }
@@ -194,15 +179,11 @@ void createExitMessage(int repetitions){
 
 void meshInit(String prefix, String password, int port)
 {
-  if (!networkstate)
-  {
-    mesh.init(prefix, password, &userScheduler, port);
-    networkstate = true;
-    mesh.onReceive(&receivedCallback);
-    mesh.onNewConnection(&newConnectionCallback);
-    mesh.onChangedConnections(&changedConnectionCallback);
-    mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
-  }
+  mesh.init(prefix, password, &userScheduler, port);
+  mesh.onReceive(&receivedCallback);
+  mesh.onNewConnection(&newConnectionCallback);
+  mesh.onChangedConnections(&changedConnectionCallback);
+  mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
 }
 
 bool nodesInNetwork()
@@ -262,7 +243,6 @@ void stateCheck()
       ready_to_charge(allResponseTrue(responseList));
     }
     createBroadcastMessage(1,broadcast);
-    set_place_in_queue(queueValue(responseList));
     Serial.printf("Place in queue %u", queueValue(responseList));
     break;
   case charging:
@@ -320,7 +300,7 @@ void setup()
   Serial.println("adding state tasks");
   userScheduler.addTask(taskStateCheck);
   Serial.println("setting interval");
-  taskStateCheck.setInterval(100);
+  taskStateCheck.setInterval(900);
   Serial.println("statemachine enable");
   taskStateCheck.enable();
 
