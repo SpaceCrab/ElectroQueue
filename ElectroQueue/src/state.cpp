@@ -429,3 +429,22 @@ void ready_to_charge(bool ready){
     first_in_queue = ready;
 
 }
+
+String stateToString(int state){
+  switch(state){
+    case assign_new_destination:
+      return "In state: assign_new_destination";
+    case move_to_destination:
+      return "In state: move_to_destination";
+    case move_to_charging_station:
+      return "In state: move to nearest charging station";
+    case connect_and_broadcast:
+      return "In state: connect_and_broadcast";
+    case queuing:
+      return "In state: queuing";
+    case charging:
+      return "In state: charging";
+    default:
+      return "Unknown state";
+  }
+}

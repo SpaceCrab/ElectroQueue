@@ -55,6 +55,8 @@ void ready_to_charge(bool queue_empty);
 void set_id(int nodeId);
 /*getters*/
 
+String stateToString(int state);
+
 position get_curr_pos();
 int get_id();
 int get_load();

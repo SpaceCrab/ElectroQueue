@@ -22,6 +22,8 @@
 #define BROADCAST_PREFIX "BROADCAST"
 #define SINGLE_PREFIX "SINGLE"
 #define EXIT_PREFIX "EXIT"
+#define REQUEST_PREFIX "REQUEST"
+#define REQUEST_RESPONSE "REQUEST_RESPONSE"
 
 // defines for OLED display
 #define SCREEN_WIDTH 128 
@@ -134,6 +136,9 @@ void handleIncoming(){
     else if (prefix == EXIT_PREFIX && incoming.msg.endsWith(currentZoneId)){
       removeFromList(incoming.id, responseList);
     }
+    else if (prefix == REQUEST_PREFIX){
+      
+    }
      
   }
   TaskHandleIncoming.setInterval(random(1,50));
@@ -152,6 +157,9 @@ void handleOutgoing(){
   else if(outgoing.msg.startsWith(SINGLE_PREFIX)){
     mesh.sendSingle(outgoing.id,outgoing.msg);
   }
+  else if(outgoing.msg.startsWith(REQUEST_RESPONSE)){
+    mesh.sendSingle(outgoing.id, outgoing.msg);
+  }
   else Serial.println("faulty message in outgoing buffer");
   taskHandleOutgoing.setInterval(random(1,50));
 }
@@ -164,6 +172,19 @@ void createBroadcastMessage(int repetitions, String msg){
   for(int i = 0; i < repetitions; i++){
     outgoingBuff.push_back(outgoingBroadcast);
   }
+}
+
+void createRequestResponse(uint32_t id){
+  message outgoingRequestResponse;
+  outgoingRequestResponse.id = id;
+
+  String msg = String(REQUEST_RESPONSE) + "Node ID: " + String(mesh.getNodeId()) +
+                      ", Current position: (" + String(get_curr_pos().x) + ", " + String(get_curr_pos().y) +
+                      "), Battery Level: " + String(get_bat_lev()) +
+                      ", Nearest station Position: (" + String(nearest_charging_station().x) + ", " + String(nearest_charging_station().y) +
+                      "), " + stateToString(currentState);
+  outgoingRequestResponse.msg = msg;
+  outgoingBuff.push_back(outgoingRequestResponse);
 }
 
 void createExitMessage(int repetitions){
